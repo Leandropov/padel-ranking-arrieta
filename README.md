@@ -68,9 +68,19 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
    — responde JSON, no lo abras esperando ver un formulario.
 8. Configurá y publicá el frontend: en `web/src/lib/api.js`, pegá ese
    link en `API_URL`. Después `cd web && npm install && npm run build`
-   y publicá `web/dist` en el hosting que elijas (Netlify, Vercel,
-   GitHub Pages, etc.). Ese link público es el que se comparte con el
-   club y el que se convierte en QR.
+   y publicá `web/dist` en el hosting que elijas. Ese link público es
+   el que se comparte con el club y el que se convierte en QR.
+
+**Este proyecto ya está publicado en Netlify**:
+[padel-ranking-arrieta.netlify.app](https://padel-ranking-arrieta.netlify.app).
+El repo incluye `netlify.toml` (`base: web`, `command: npm run build`,
+`publish: dist`) y está linkeado vía Netlify CLI (`.netlify/`, fuera de
+git). Para republicar después de un cambio en `web/`:
+```
+cd web && npm run build
+cd ..
+npx netlify-cli deploy --prod --dir web/dist
+```
 
 ### Actualizar el backend después de la instalación
 
