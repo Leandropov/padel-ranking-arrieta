@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Registrar resultado de partido</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; color: #222; }
+  h2 { font-size: 1.2em; }
+  label { display: block; margin-top: 14px; font-weight: bold; font-size: 0.95em; }
+  select, input[type=text], input[type=date], input[type=time] {
+    width: 100%; padding: 8px; margin-top: 4px; font-size: 1em; box-sizing: border-box;
+  }
+  button { margin-top: 20px; width: 100%; padding: 12px; font-size: 1em; border: none; border-radius: 6px; cursor: pointer; }
+  .primary { background: #2e7d32; color: white; }
+  .secondary { background: #eee; color: #333; }
+  .error { color: #c62828; margin-top: 10px; font-size: 0.9em; }
+  .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+  .step { display: none; }
+  .step.active { display: block; }
+  .admin-box { background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 10px; margin-top: 16px; }
+  .buscador { position: relative; }
+  .buscador-opciones {
+    display: none; position: absolute; z-index: 10; left: 0; right: 0; top: 100%;
+    background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 6px 6px;
+    max-height: 190px; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  }
+  .buscador-opciones.visible { display: block; }
+  .buscador-opciones div { padding: 9px 10px; cursor: pointer; }
+  .buscador-opciones div:hover { background: #f0f0f0; }
+  .buscador-opciones .sin-resultados { color: #888; font-style: italic; cursor: default; }
+  .buscador-opciones .sin-resultados:hover { background: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 16px; padding: 4px 6px 4px 12px; font-size: 0.9em; display: flex; align-items: center; gap: 4px; }
+  .chip button { margin: 0; padding: 0 6px; width: auto; background: none; border: none; color: #2e7d32; font-weight: bold; cursor: pointer; font-size: 1.1em; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div id="cargando" style="padding:60px 0;text-align:center;color:#666">Cargando…</div>
+
+<div id="step-form" class="step">
+  <h2>Registrar resultado de partido</h2>
+
+  <div id="bloqueChooser" style="display:none">
+    <p>Terminaron varios partidos casi al mismo tiempo. Elegí cuál cargás:</p>
+    <div id="bloqueOpciones"></div>
+    <button class="secondary" onclick="usarManual()">Ninguno de estos / elegir cancha y hora a mano</button>
+  </div>
+
+  <div id="modoNotice" class="admin-box" style="display:none"></div>
+
+  <div id="restoForm">
+  <label>¿Quién eres?</label>
+  <div class="buscador" id="quienEresBuscador">
+    <input type="text" id="quienEresInput" placeholder="Escribí tu nombre…" autocomplete="off" />
+    <div class="buscador-opciones" id="quienEresOpciones"></div>
+  </div>
+
+  <label>Cancha</label>
+  <select id="cancha"></select>
+
+  <label>Fecha del partido</label>
+  <div id="fechaTexto" style="padding:8px 0;font-weight:normal"></div>
+  <input type="date" id="fecha" style="display:none" />
+
+  <label>Hora en que terminó</label>
+  <select id="hora">
+    <option value="" disabled selected>Elegí un horario</option>
+  </select>
+
+  <label>Equipo A (elegí 2)</label>
+  <div class="buscador" id="equipoABuscador">
+    <div class="chips" id="equipoAChips"></div>
+    <input type="text" id="equipoAInput" placeholder="Buscar jugador…" autocomplete="off" />
+    <div class="buscador-opciones" id="equipoAOpciones"></div>
+  </div>
+
+  <label>Equipo B (elegí 2)</label>
+  <div class="buscador" id="equipoBBuscador">
+    <div class="chips" id="equipoBChips"></div>
+    <input type="text" id="equipoBInput" placeholder="Buscar jugador…" autocomplete="off" />
+    <div class="buscador-opciones" id="equipoBOpciones"></div>
+  </div>
+
+  <label>¿Qué equipo ganó?</label>
+  <select id="ganador">
+    <option value="A">Equipo A</option>
+    <option value="B">Equipo B</option>
+  </select>
+
+  <label>Resultado exacto (ej: 6-4, 6-3)</label>
+  <input type="text" id="resultado" placeholder="6-4, 6-3" inputmode="numeric" pattern="[0-9]*" />
+
+  <div style="text-align:center;margin-top:20px">
+    <a href="#" id="linkAdmin" style="font-size:0.8em;color:#999">Administración</a>
+  </div>
+  <div id="adminBox" class="admin-box" style="display:none">
+    <label>Motivo (partido que nunca se registró en su momento)</label>
+    <input type="text" id="motivo" placeholder="Ej: el jugador se olvidó de cargarlo" />
+    <label>PIN de administración</label>
+    <input type="password" id="pin" autocomplete="off" inputmode="numeric" />
+    <button type="button" class="secondary" onclick="cancelarAdmin()" style="margin-top:10px">Cancelar</button>
+  </div>
+
+  <div id="form-error" class="error"></div>
+  <button class="primary" onclick="irAConfirmar()">Revisar antes de enviar</button>
+  </div>
+</div>
+
+<div id="step-confirm" class="step">
+  <h2>Confirmá los datos</h2>
+  <div id="resumen"></div>
+  <div id="confirm-error" class="error"></div>
+  <button class="primary" onclick="confirmarEnvio()">Confirmar y enviar</button>
+  <button class="secondary" onclick="volverAFormulario()">Corregir</button>
+</div>
+
+<div id="step-done" class="step">
+  <h2 id="done-title"></h2>
+  <div id="done-body"></div>
+  <button class="secondary" onclick="location.reload()">Cargar otro resultado</button>
+</div>
+
+<script>
+  // URL de la web app de Apps Script (backend). Si el día de mañana se
+  // vuelve a implementar con "Nueva versión", la URL no cambia -- solo
+  // cambiaría si se crea una implementación completamente nueva.
+  const API_URL = 'https://script.google.com/macros/s/AKfycbyIWdxh5iUBrjFclCeMZdfyl1N5HvK2MgOkioVpAjNmTwih4XzFa3NcSwQcL7PY7IC3/exec';
+
+  let jugadores = [];
+  let ultimoPayload = null;
+  let quienEresBuscador, equipoABuscador, equipoBBuscador;
+  let fechaHoy = '';
+  let modoAdmin = false;
+
+  // El link de administración queda discreto (texto gris chico) a
+  // propósito -- la protección real no es esconderlo, es el PIN que se
+  // valida en el servidor (ver validarPayload_ en WebApp.gs).
+  document.getElementById('linkAdmin').addEventListener('click', function (e) {
+    e.preventDefault();
+    modoAdmin = true;
+    document.getElementById('adminBox').style.display = 'block';
+    document.getElementById('linkAdmin').parentElement.style.display = 'none';
+    // Fuera de una carga por administración, la fecha siempre es "hoy" y
+    // no se puede tocar. Solo la administración puede cargar un partido
+    // de un día anterior (nunca futuro, por el "max").
+    document.getElementById('fecha').style.display = 'block';
+    document.getElementById('fechaTexto').style.display = 'none';
+  });
+
+  function cancelarAdmin() {
+    modoAdmin = false;
+    document.getElementById('adminBox').style.display = 'none';
+    document.getElementById('linkAdmin').parentElement.style.display = 'block';
+    document.getElementById('fecha').style.display = 'none';
+    document.getElementById('fechaTexto').style.display = 'block';
+    document.getElementById('fecha').value = fechaHoy;
+    document.getElementById('motivo').value = '';
+    document.getElementById('pin').value = '';
+  }
+
+  /**
+   * Máscara del campo "Resultado exacto": solo dígitos, y arma el
+   * formato "D-D, D-D" solo. Guion y coma se insertan solos, tope de
+   * 3 sets (6 dígitos) que es lo máximo que se juega en pádel.
+   */
+  (function configurarMascaraResultado() {
+    const input = document.getElementById('resultado');
+    const MAX_DIGITOS = 6;
+
+    function formatear(digitos) {
+      const sets = [];
+      for (let i = 0; i < digitos.length; i += 2) {
+        const par = digitos.slice(i, i + 2);
+        sets.push(par.length === 2 ? par[0] + '-' + par[1] : par[0]);
+      }
+      return sets.join(', ');
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key.length === 1 && !/[0-9]/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+
+    input.addEventListener('input', function () {
+      const digitos = input.value.replace(/\D/g, '').slice(0, MAX_DIGITOS).split('');
+      input.value = formatear(digitos);
+    });
+  })();
+
+  fetch(API_URL)
+    .then((r) => r.json())
+    .then((res) => {
+      if (res.ok) iniciarConContexto(res.data);
+      else mostrarErrorCarga(res.error);
+    })
+    .catch((err) => mostrarErrorCarga(err.message));
+
+  function mostrarErrorCarga(mensaje) {
+    document.getElementById('cargando').textContent = 'No se pudo cargar la página: ' + mensaje;
+  }
+
+  function iniciarConContexto(ctx) {
+    document.getElementById('cargando').style.display = 'none';
+    mostrarPaso('step-form');
+
+    jugadores = ctx.jugadores;
+    llenarSelect('cancha', ctx.canchas);
+
+    fechaHoy = ctx.fecha;
+    document.getElementById('fecha').value = ctx.fecha;
+    document.getElementById('fecha').max = ctx.fecha; // nunca una fecha futura, ni para admin
+    document.getElementById('fechaTexto').textContent = 'Hoy (' + formatearFechaLegible_(ctx.fecha) + ')';
+
+    llenarSelectHoras('hora', ctx.bloquesDelDia);
+
+    quienEresBuscador = crearBuscador({ inputId: 'quienEresInput', opcionesId: 'quienEresOpciones', multiple: false });
+    equipoABuscador = crearBuscador({
+      inputId: 'equipoAInput',
+      opcionesId: 'equipoAOpciones',
+      multiple: true,
+      max: 2,
+      obtenerExcluidos: () => (equipoBBuscador ? equipoBBuscador.getSeleccionados() : []),
+    });
+    equipoBBuscador = crearBuscador({
+      inputId: 'equipoBInput',
+      opcionesId: 'equipoBOpciones',
+      multiple: true,
+      max: 2,
+      obtenerExcluidos: () => (equipoABuscador ? equipoABuscador.getSeleccionados() : []),
+    });
+
+    if (ctx.modo === 'elegir') {
+      document.getElementById('bloqueChooser').style.display = 'block';
+      document.getElementById('restoForm').style.display = 'none';
+      document.getElementById('bloqueOpciones').innerHTML = ctx.candidatos
+        .map(
+          (cancha) =>
+            '<button class="secondary" onclick="elegirBloque(\'' +
+            cancha +
+            '\',\'' +
+            ctx.bloque.fin +
+            '\')">' +
+            cancha +
+            ' (' +
+            ctx.bloque.inicio +
+            '–' +
+            ctx.bloque.fin +
+            ')</button>'
+        )
+        .join('');
+    } else if (ctx.modo === 'auto') {
+      const cancha = ctx.candidatos[0];
+      document.getElementById('cancha').value = cancha;
+      document.getElementById('hora').value = ctx.bloque.fin;
+      mostrarNotice(
+        'Detectamos que ' + cancha + ' terminó de jugar a las ' + ctx.bloque.fin + '. Si no es así, corregí los datos abajo.'
+      );
+    } else {
+      document.getElementById('hora').value = '';
+      mostrarNotice('No detectamos un partido recién terminado (o ya están todos cargados). Elegí cancha y hora manualmente.');
+    }
+  }
+
+  function elegirBloque(cancha, hora) {
+    document.getElementById('cancha').value = cancha;
+    document.getElementById('hora').value = hora;
+    document.getElementById('bloqueChooser').style.display = 'none';
+    document.getElementById('restoForm').style.display = 'block';
+  }
+
+  function usarManual() {
+    document.getElementById('hora').value = '';
+    document.getElementById('bloqueChooser').style.display = 'none';
+    document.getElementById('restoForm').style.display = 'block';
+    mostrarNotice('Elegí cancha y hora manualmente.');
+  }
+
+  function mostrarNotice(texto) {
+    const el = document.getElementById('modoNotice');
+    el.textContent = texto;
+    el.style.display = 'block';
+  }
+
+  function escapeHtml_(texto) {
+    return String(texto)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function llenarSelect(id, opciones) {
+    const el = document.getElementById(id);
+    el.innerHTML = opciones.map((o) => '<option value="' + escapeHtml_(o) + '">' + escapeHtml_(o) + '</option>').join('');
+  }
+
+  /**
+   * Desplegable de horarios: solo los bloques reales del club (los que
+   * están configurados en Categorías!B13:B16), nunca un horario libre.
+   */
+  function llenarSelectHoras(id, bloques) {
+    const el = document.getElementById(id);
+    el.innerHTML =
+      '<option value="" disabled>Elegí un horario</option>' +
+      bloques
+        .map((b) => '<option value="' + b.fin + '">' + b.inicio + '–' + b.fin + '</option>')
+        .join('');
+  }
+
+  function formatearFechaLegible_(iso) {
+    const [anio, mes, dia] = iso.split('-');
+    return dia + '/' + mes + '/' + anio;
+  }
+
+  /**
+   * Buscador con autocompletar para elegir jugadores entre cientos de
+   * opciones sin depender de un <select>/checkboxes gigante. multiple:false
+   * = un solo valor (ej. "¿Quién eres?"); multiple:true = hasta `max`
+   * valores con chips removibles (ej. equipos). obtenerExcluidos() deja
+   * afuera de las sugerencias los nombres ya elegidos en el otro equipo.
+   */
+  function crearBuscador({ inputId, opcionesId, multiple, max, obtenerExcluidos }) {
+    const input = document.getElementById(inputId);
+    const opcionesEl = document.getElementById(opcionesId);
+    const chipsEl = multiple ? document.getElementById(inputId.replace('Input', 'Chips')) : null;
+    let seleccionados = [];
+    let filtradasActuales = [];
+
+    function opcionesFiltradas(texto) {
+      const excluidos = new Set([...(obtenerExcluidos ? obtenerExcluidos() : []), ...seleccionados]);
+      const t = texto.trim().toLowerCase();
+      return jugadores.filter((n) => !excluidos.has(n) && (!t || n.toLowerCase().includes(t))).slice(0, 8);
+    }
+
+    function render(texto) {
+      filtradasActuales = opcionesFiltradas(texto);
+      opcionesEl.innerHTML = filtradasActuales.length
+        ? filtradasActuales.map((n, i) => '<div data-i="' + i + '">' + escapeHtml_(n) + '</div>').join('')
+        : '<div class="sin-resultados">Sin resultados</div>';
+      opcionesEl.classList.add('visible');
+    }
+
+    function ocultar() {
+      opcionesEl.classList.remove('visible');
+    }
+
+    function elegir(nombre) {
+      if (multiple) {
+        if (seleccionados.length >= max) return;
+        seleccionados.push(nombre);
+        renderChips();
+        input.value = '';
+        if (seleccionados.length >= max) {
+          input.disabled = true;
+          input.placeholder = 'Máximo alcanzado';
+          ocultar();
+        } else {
+          render(''); // deja la lista abierta, lista para elegir el siguiente
+        }
+      } else {
+        seleccionados = [nombre];
+        input.value = nombre;
+        ocultar();
+      }
+    }
+
+    function quitar(nombre) {
+      seleccionados = seleccionados.filter((n) => n !== nombre);
+      input.disabled = false;
+      input.placeholder = 'Buscar jugador…';
+      renderChips();
+    }
+
+    function renderChips() {
+      if (!multiple) return;
+      chipsEl.innerHTML = seleccionados
+        .map(
+          (n) =>
+            '<span class="chip">' +
+            escapeHtml_(n) +
+            '<button type="button" data-quitar="' +
+            escapeHtml_(n) +
+            '">×</button></span>'
+        )
+        .join('');
+      chipsEl.querySelectorAll('button[data-quitar]').forEach((b) => {
+        b.addEventListener('click', () => quitar(b.dataset.quitar));
+      });
+    }
+
+    input.addEventListener('input', () => render(input.value));
+    input.addEventListener('focus', () => render(input.value));
+    input.addEventListener('blur', () => setTimeout(ocultar, 150));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (filtradasActuales[0]) elegir(filtradasActuales[0]);
+      }
+    });
+    opcionesEl.addEventListener('mousedown', (e) => {
+      const div = e.target.closest('div[data-i]');
+      if (!div) return;
+      const nombre = filtradasActuales[Number(div.dataset.i)];
+      if (nombre) elegir(nombre);
+    });
+
+    return {
+      getSeleccionados: () => seleccionados.slice(),
+      getSeleccionado: () => (multiple ? null : seleccionados[0] || null),
+    };
+  }
+
+  function leerFormulario() {
+    return {
+      quienEres: quienEresBuscador.getSeleccionado() || '',
+      cancha: document.getElementById('cancha').value,
+      fecha: document.getElementById('fecha').value,
+      hora: document.getElementById('hora').value,
+      equipoA: equipoABuscador.getSeleccionados(),
+      equipoB: equipoBBuscador.getSeleccionados(),
+      ganador: document.getElementById('ganador').value,
+      resultado: document.getElementById('resultado').value.trim(),
+      cargaAdministracion: modoAdmin,
+      motivo: document.getElementById('motivo').value.trim(),
+      pin: document.getElementById('pin').value.trim(),
+    };
+  }
+
+  function validarLocal(p) {
+    if (!p.quienEres) return 'Elegí tu nombre de la lista.';
+    if (!p.hora) return 'Elegí el horario del partido.';
+    if (p.equipoA.length !== 2) return 'Elegí exactamente 2 jugadores para el equipo A.';
+    if (p.equipoB.length !== 2) return 'Elegí exactamente 2 jugadores para el equipo B.';
+    if (!p.cargaAdministracion && !p.equipoA.includes(p.quienEres) && !p.equipoB.includes(p.quienEres)) {
+      return 'Quien completa el formulario debe ser uno de los 4 jugadores del partido (o usá la opción de administración si no jugaste vos).';
+    }
+    if (!p.resultado) return 'Falta el resultado (ej: 6-4, 6-3).';
+    if (!/^\d-\d(, \d-\d){1,2}$/.test(p.resultado)) return 'Completá el resultado de al menos 2 sets (ej: 6-4, 6-3).';
+    if (p.cargaAdministracion && !p.motivo) return 'Las cargas por administración necesitan un motivo.';
+    if (p.cargaAdministracion && !p.pin) return 'Ingresá el PIN de administración.';
+    return null;
+  }
+
+  function irAConfirmar() {
+    const p = leerFormulario();
+    const err = validarLocal(p);
+    document.getElementById('form-error').textContent = err || '';
+    if (err) return;
+    ultimoPayload = p;
+    document.getElementById('resumen').innerHTML =
+      fila('Quién carga', p.quienEres) +
+      fila('Cancha', p.cancha) +
+      fila('Fecha', p.fecha) +
+      fila('Hora fin', p.hora) +
+      fila('Equipo A', p.equipoA.join(' / ')) +
+      fila('Equipo B', p.equipoB.join(' / ')) +
+      fila('Ganador', 'Equipo ' + p.ganador) +
+      fila('Resultado', p.resultado) +
+      (p.cargaAdministracion ? fila('Carga por administración', p.motivo) : '');
+    mostrarPaso('step-confirm');
+  }
+
+  function fila(label, valor) {
+    return '<div class="summary-row"><span>' + escapeHtml_(label) + '</span><strong>' + escapeHtml_(valor) + '</strong></div>';
+  }
+
+  function volverAFormulario() {
+    mostrarPaso('step-form');
+  }
+
+  function confirmarEnvio() {
+    document.getElementById('confirm-error').textContent = '';
+    fetch(API_URL, { method: 'POST', body: JSON.stringify(ultimoPayload) })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok) mostrarExito(res.data);
+        else document.getElementById('confirm-error').textContent = res.error;
+      })
+      .catch((err) => {
+        document.getElementById('confirm-error').textContent = err.message;
+      });
+  }
+
+  function mostrarExito(res) {
+    document.getElementById('done-title').textContent = 'Resultado registrado';
+    document.getElementById('done-body').innerHTML =
+      fila(res.equipoA.join(' / '), (res.deltaA > 0 ? '+' : '') + res.deltaA) +
+      fila(res.equipoB.join(' / '), (res.deltaB > 0 ? '+' : '') + res.deltaB);
+    mostrarPaso('step-done');
+  }
+
+  function mostrarPaso(id) {
+    document.querySelectorAll('.step').forEach((s) => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+</script>
+</body>
+</html>

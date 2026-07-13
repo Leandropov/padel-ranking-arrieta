@@ -1,0 +1,307 @@
+<style>
+  body { font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; color: #222; }
+  h2 { font-size: 1.2em; }
+  label { display: block; margin-top: 14px; font-weight: bold; font-size: 0.95em; }
+  select, input[type=text], input[type=date], input[type=time] {
+    width: 100%; padding: 8px; margin-top: 4px; font-size: 1em; box-sizing: border-box;
+  }
+  fieldset { margin-top: 10px; border: 1px solid #ccc; border-radius: 6px; }
+  .checkbox-row { display: flex; align-items: center; padding: 4px 0; }
+  .checkbox-row input { margin-right: 8px; width: auto; }
+  button { margin-top: 20px; width: 100%; padding: 12px; font-size: 1em; border: none; border-radius: 6px; cursor: pointer; }
+  .primary { background: #2e7d32; color: white; }
+  .secondary { background: #eee; color: #333; }
+  .error { color: #c62828; margin-top: 10px; font-size: 0.9em; }
+  .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+  .step { display: none; }
+  .step.active { display: block; }
+  .admin-box { background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 10px; margin-top: 16px; }
+</style>
+
+<div id="cargando" style="padding:60px 0;text-align:center;color:#666">Cargando…</div>
+
+<div id="step-form" class="step">
+  <h2>Registrar resultado de partido</h2>
+
+  <div id="bloqueChooser" style="display:none">
+    <p>Terminaron varios partidos casi al mismo tiempo. Elegí cuál cargás:</p>
+    <div id="bloqueOpciones"></div>
+    <button class="secondary" onclick="usarManual()">Ninguno de estos / elegir cancha y hora a mano</button>
+  </div>
+
+  <div id="modoNotice" class="admin-box" style="display:none"></div>
+
+  <div id="restoForm">
+  <label>¿Quién eres?</label>
+  <select id="quienEres"></select>
+
+  <label>Cancha</label>
+  <select id="cancha"></select>
+
+  <label>Fecha del partido</label>
+  <input type="date" id="fecha" />
+
+  <label>Hora en que terminó</label>
+  <input type="time" id="hora" />
+
+  <label>Equipo A (elegí 2)</label>
+  <fieldset id="equipoA"></fieldset>
+
+  <label>Equipo B (elegí 2)</label>
+  <fieldset id="equipoB"></fieldset>
+
+  <label>¿Qué equipo ganó?</label>
+  <select id="ganador">
+    <option value="A">Equipo A</option>
+    <option value="B">Equipo B</option>
+  </select>
+
+  <label>Resultado exacto (ej: 6-4, 6-3)</label>
+  <input type="text" id="resultado" placeholder="6-4, 6-3" />
+
+  <div class="admin-box">
+    <div class="checkbox-row">
+      <input type="checkbox" id="cargaAdmin" />
+      <label style="margin:0">Carga por administración (partido que nunca se registró en su momento)</label>
+    </div>
+    <div id="motivoBox" style="display:none">
+      <label>Motivo</label>
+      <input type="text" id="motivo" placeholder="Ej: el jugador se olvidó de cargarlo" />
+    </div>
+  </div>
+
+  <div id="form-error" class="error"></div>
+  <button class="primary" onclick="irAConfirmar()">Revisar antes de enviar</button>
+  </div>
+</div>
+
+<div id="step-confirm" class="step">
+  <h2>Confirmá los datos</h2>
+  <div id="resumen"></div>
+  <div id="confirm-error" class="error"></div>
+  <button class="primary" onclick="confirmarEnvio()">Confirmar y enviar</button>
+  <button class="secondary" onclick="volverAFormulario()">Corregir</button>
+</div>
+
+<div id="step-done" class="step">
+  <h2 id="done-title"></h2>
+  <div id="done-body"></div>
+  <button class="secondary" onclick="location.reload()">Cargar otro resultado</button>
+</div>
+
+<script>
+  let jugadores = [];
+  let ultimoPayload = null;
+
+  document.getElementById('cargaAdmin').addEventListener('change', function (e) {
+    document.getElementById('motivoBox').style.display = e.target.checked ? 'block' : 'none';
+  });
+
+  google.script.run
+    .withSuccessHandler(iniciarConContexto)
+    .withFailureHandler(function (err) {
+      document.getElementById('cargando').textContent = 'No se pudo cargar la página: ' + (err.message || err);
+    })
+    .getContext();
+
+  function iniciarConContexto(ctx) {
+    document.getElementById('cargando').style.display = 'none';
+    mostrarPaso('step-form');
+
+    jugadores = ctx.jugadores;
+    llenarSelect('quienEres', jugadores);
+    llenarSelect('cancha', ctx.canchas);
+    llenarCheckboxes('equipoA', jugadores);
+    llenarCheckboxes('equipoB', jugadores);
+    document.getElementById('fecha').value = ctx.fecha;
+
+    if (ctx.modo === 'elegir') {
+      document.getElementById('bloqueChooser').style.display = 'block';
+      document.getElementById('restoForm').style.display = 'none';
+      document.getElementById('bloqueOpciones').innerHTML = ctx.candidatos
+        .map(
+          (cancha) =>
+            '<button class="secondary" onclick="elegirBloque(\'' +
+            cancha +
+            '\',\'' +
+            ctx.bloque.fin +
+            '\')">' +
+            cancha +
+            ' (' +
+            ctx.bloque.inicio +
+            '–' +
+            ctx.bloque.fin +
+            ')</button>'
+        )
+        .join('');
+    } else if (ctx.modo === 'auto') {
+      const cancha = ctx.candidatos[0];
+      document.getElementById('cancha').value = cancha;
+      document.getElementById('hora').value = ctx.bloque.fin;
+      mostrarNotice(
+        'Detectamos que ' + cancha + ' terminó de jugar a las ' + ctx.bloque.fin + '. Si no es así, corregí los datos abajo.'
+      );
+    } else {
+      document.getElementById('hora').value = '';
+      mostrarNotice('No detectamos un partido recién terminado (o ya están todos cargados). Elegí cancha y hora manualmente.');
+    }
+  }
+
+  function elegirBloque(cancha, hora) {
+    document.getElementById('cancha').value = cancha;
+    document.getElementById('hora').value = hora;
+    document.getElementById('bloqueChooser').style.display = 'none';
+    document.getElementById('restoForm').style.display = 'block';
+  }
+
+  function usarManual() {
+    document.getElementById('hora').value = '';
+    document.getElementById('bloqueChooser').style.display = 'none';
+    document.getElementById('restoForm').style.display = 'block';
+    mostrarNotice('Elegí cancha y hora manualmente.');
+  }
+
+  function mostrarNotice(texto) {
+    const el = document.getElementById('modoNotice');
+    el.textContent = texto;
+    el.style.display = 'block';
+  }
+
+  function escapeHtml_(texto) {
+    return String(texto)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function llenarSelect(id, opciones) {
+    const el = document.getElementById(id);
+    el.innerHTML = opciones.map((o) => '<option value="' + escapeHtml_(o) + '">' + escapeHtml_(o) + '</option>').join('');
+  }
+
+  function llenarCheckboxes(groupId, opciones) {
+    const el = document.getElementById(groupId);
+    el.innerHTML = opciones
+      .map(
+        (nombre, i) =>
+          '<div class="checkbox-row"><input type="checkbox" id="' +
+          groupId +
+          '_' +
+          i +
+          '" value="' +
+          escapeHtml_(nombre) +
+          '" onchange="onCheckboxChange(\'' +
+          groupId +
+          '\')" /><label style="margin:0;font-weight:normal" for="' +
+          groupId +
+          '_' +
+          i +
+          '">' +
+          escapeHtml_(nombre) +
+          '</label></div>'
+      )
+      .join('');
+  }
+
+  function seleccionados(groupId) {
+    return Array.from(document.querySelectorAll('#' + groupId + ' input:checked')).map((c) => c.value);
+  }
+
+  function onCheckboxChange(groupId) {
+    const marcados = seleccionados(groupId);
+    // Máximo 2 por equipo: si ya hay 2, deshabilita el resto de ese grupo.
+    const checkboxes = document.querySelectorAll('#' + groupId + ' input');
+    checkboxes.forEach((cb) => {
+      cb.disabled = marcados.length >= 2 && !cb.checked;
+    });
+    actualizarBloqueoEntreEquipos();
+  }
+
+  function actualizarBloqueoEntreEquipos() {
+    // Un jugador elegido en un equipo no puede aparecer en el otro.
+    const enA = seleccionados('equipoA');
+    const enB = seleccionados('equipoB');
+    document.querySelectorAll('#equipoB input').forEach((cb) => {
+      if (enA.includes(cb.value)) { cb.disabled = true; cb.checked = false; }
+    });
+    document.querySelectorAll('#equipoA input').forEach((cb) => {
+      if (enB.includes(cb.value)) { cb.disabled = true; cb.checked = false; }
+    });
+  }
+
+  function leerFormulario() {
+    return {
+      quienEres: document.getElementById('quienEres').value,
+      cancha: document.getElementById('cancha').value,
+      fecha: document.getElementById('fecha').value,
+      hora: document.getElementById('hora').value,
+      equipoA: seleccionados('equipoA'),
+      equipoB: seleccionados('equipoB'),
+      ganador: document.getElementById('ganador').value,
+      resultado: document.getElementById('resultado').value.trim(),
+      cargaAdministracion: document.getElementById('cargaAdmin').checked,
+      motivo: document.getElementById('motivo').value.trim(),
+    };
+  }
+
+  function validarLocal(p) {
+    if (p.equipoA.length !== 2) return 'Elegí exactamente 2 jugadores para el equipo A.';
+    if (p.equipoB.length !== 2) return 'Elegí exactamente 2 jugadores para el equipo B.';
+    if (!p.resultado) return 'Falta el resultado (ej: 6-4, 6-3).';
+    if (!/^\d+-\d+(\s*,\s*\d+-\d+)*$/.test(p.resultado)) return 'El resultado debe tener el formato "6-4, 6-3".';
+    if (p.cargaAdministracion && !p.motivo) return 'Las cargas por administración necesitan un motivo.';
+    return null;
+  }
+
+  function irAConfirmar() {
+    const p = leerFormulario();
+    const err = validarLocal(p);
+    document.getElementById('form-error').textContent = err || '';
+    if (err) return;
+    ultimoPayload = p;
+    document.getElementById('resumen').innerHTML =
+      fila('Quién carga', p.quienEres) +
+      fila('Cancha', p.cancha) +
+      fila('Fecha', p.fecha) +
+      fila('Hora fin', p.hora) +
+      fila('Equipo A', p.equipoA.join(' / ')) +
+      fila('Equipo B', p.equipoB.join(' / ')) +
+      fila('Ganador', 'Equipo ' + p.ganador) +
+      fila('Resultado', p.resultado) +
+      (p.cargaAdministracion ? fila('Carga por administración', p.motivo) : '');
+    mostrarPaso('step-confirm');
+  }
+
+  function fila(label, valor) {
+    return '<div class="summary-row"><span>' + escapeHtml_(label) + '</span><strong>' + escapeHtml_(valor) + '</strong></div>';
+  }
+
+  function volverAFormulario() {
+    mostrarPaso('step-form');
+  }
+
+  function confirmarEnvio() {
+    document.getElementById('confirm-error').textContent = '';
+    google.script.run
+      .withSuccessHandler(mostrarExito)
+      .withFailureHandler(function (err) {
+        document.getElementById('confirm-error').textContent = err.message || String(err);
+      })
+      .submitResultado(ultimoPayload);
+  }
+
+  function mostrarExito(res) {
+    document.getElementById('done-title').textContent = 'Resultado registrado';
+    document.getElementById('done-body').innerHTML =
+      fila(res.equipoA.join(' / '), (res.deltaA > 0 ? '+' : '') + res.deltaA) +
+      fila(res.equipoB.join(' / '), (res.deltaB > 0 ? '+' : '') + res.deltaB);
+    mostrarPaso('step-done');
+  }
+
+  function mostrarPaso(id) {
+    document.querySelectorAll('.step').forEach((s) => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+</script>
