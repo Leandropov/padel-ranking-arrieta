@@ -19,9 +19,15 @@
  * a cargar jugadores, si hay que elegir entre varias canchas, o si cae
  * al selector manual de respaldo. Ver getBloqueRecienTerminado_ en
  * Config.gs.
+ *
+ * doGet() también sirve la página de ranking (?vista=ranking, ver
+ * getRanking() en Ranking.gs) -- mismo backend, misma implementación
+ * de Apps Script, un solo query param decide qué devolver.
  */
 
 function doGet(e) {
+  const vista = e && e.parameter && e.parameter.vista;
+  if (vista === 'ranking') return jsonOutput_(safeRun_(getRanking));
   return jsonOutput_(safeRun_(getContext));
 }
 
