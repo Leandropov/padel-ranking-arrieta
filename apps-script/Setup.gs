@@ -154,13 +154,13 @@ function setupFormularioRegistro_(ss) {
 
   form
     .addTextItem()
-    .setTitle('Nombre completo (agregá algo que te distinga: apellido materno, apodo, o número de jugador)')
+    .setTitle('Nombre completo (agrega algo que te distinga: apellido materno, apodo, o número de jugador)')
     .setRequired(true);
 
   const categorias = getCategoryRanges_(); // ya está seteado SPREADSHEET_ID en script properties
   form
     .addListItem()
-    .setTitle('¿Qué categoría considerás tener?')
+    .setTitle('¿Qué categoría consideras tener?')
     .setChoiceValues(categorias.map((c) => c.nombre))
     .setRequired(true);
 
