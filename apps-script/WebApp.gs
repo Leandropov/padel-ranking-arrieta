@@ -116,7 +116,7 @@ function submitResultado(payload) {
   const [b1, b2] = payload.equipoB;
   [payload.quienEres, a1, a2, b1, b2].forEach((nombre) => {
     if (!mapaJugadores[nombre]) {
-      throw new Error('"' + nombre + '" no está en Jugadores. Pedile que se registre primero.');
+      throw new Error('"' + nombre + '" no está en Jugadores. Pídele que se registre primero.');
     }
   });
 

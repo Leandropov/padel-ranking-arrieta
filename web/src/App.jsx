@@ -77,17 +77,17 @@ export default function App() {
   }
 
   function validar(p) {
-    if (!p.quienEres) return 'Elegí tu nombre de la lista.';
-    if (!p.hora) return 'Elegí el horario del partido.';
-    if (p.equipoA.length !== 2) return 'Elegí exactamente 2 jugadores para el equipo A.';
-    if (p.equipoB.length !== 2) return 'Elegí exactamente 2 jugadores para el equipo B.';
+    if (!p.quienEres) return 'Elige tu nombre de la lista.';
+    if (!p.hora) return 'Elige el horario del partido.';
+    if (p.equipoA.length !== 2) return 'Elige exactamente 2 jugadores para el equipo A.';
+    if (p.equipoB.length !== 2) return 'Elige exactamente 2 jugadores para el equipo B.';
     if (!modoAdmin && !p.equipoA.includes(p.quienEres) && !p.equipoB.includes(p.quienEres)) {
-      return 'Quien completa el formulario debe ser uno de los 4 jugadores del partido (o usá la opción de administración si no jugaste vos).';
+      return 'Quien completa el formulario debe ser uno de los 4 jugadores del partido (o usa la opción de administración si no jugaste este partido).';
     }
     if (!p.resultado) return 'Falta el resultado (ej: 6-4, 6-3).';
-    if (!/^\d-\d(, \d-\d){1,2}$/.test(p.resultado)) return 'Completá el resultado de al menos 2 sets (ej: 6-4, 6-3).';
+    if (!/^\d-\d(, \d-\d){1,2}$/.test(p.resultado)) return 'Completa el resultado de al menos 2 sets (ej: 6-4, 6-3).';
     if (modoAdmin && !p.motivo) return 'Las cargas por administración necesitan un motivo.';
-    if (modoAdmin && !p.pin) return 'Ingresá el PIN de administración.';
+    if (modoAdmin && !p.pin) return 'Ingresa el PIN de administración.';
     return null;
   }
 
@@ -151,7 +151,7 @@ export default function App() {
       <div className="mx-auto max-w-md p-4">
         <Card>
           <CardHeader>
-            <CardTitle>Confirmá los datos</CardTitle>
+            <CardTitle>Confirma los datos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label="Quién carga" valor={form.quienEres} />
@@ -196,7 +196,7 @@ export default function App() {
         <CardContent className="space-y-4">
           {modo === 'elegir' ? (
             <div className="space-y-2">
-              <p className="text-sm">Terminaron varios partidos casi al mismo tiempo. Elegí cuál cargás:</p>
+              <p className="text-sm">Terminaron varios partidos casi al mismo tiempo. Elige cuál cargar:</p>
               {ctx.candidatos.map((cancha) => (
                 <Button
                   key={cancha}
@@ -213,7 +213,7 @@ export default function App() {
               {modo === 'auto' && (
                 <Alert>
                   <AlertDescription>
-                    Detectamos que {ctx.candidatos[0]} terminó de jugar a las {ctx.bloque.fin}. Si no es así, corregí
+                    Detectamos que {ctx.candidatos[0]} terminó de jugar a las {ctx.bloque.fin}. Si no es así, corrige
                     los datos abajo.
                   </AlertDescription>
                 </Alert>
@@ -221,7 +221,7 @@ export default function App() {
               {modo === 'manual' && (
                 <Alert>
                   <AlertDescription>
-                    No detectamos un partido recién terminado (o ya están todos cargados). Elegí cancha y hora
+                    No detectamos un partido recién terminado (o ya están todos cargados). Elige cancha y hora
                     manualmente.
                   </AlertDescription>
                 </Alert>
@@ -233,7 +233,7 @@ export default function App() {
                   players={ctx.jugadores}
                   value={form.quienEres}
                   onChange={(v) => actualizar('quienEres', v)}
-                  placeholder="Escribí tu nombre…"
+                  placeholder="Escribe tu nombre…"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export default function App() {
                   onValueChange={(v) => actualizar('cancha', v)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Elegí una cancha" />
+                    <SelectValue placeholder="Elige una cancha" />
                   </SelectTrigger>
                   <SelectPopup>
                     {ctx.canchas.map((c) => (
@@ -281,7 +281,7 @@ export default function App() {
                   onValueChange={(v) => actualizar('hora', v)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Elegí un horario" />
+                    <SelectValue placeholder="Elige un horario" />
                   </SelectTrigger>
                   <SelectPopup>
                     {ctx.bloquesDelDia.map((b) => (
@@ -294,7 +294,7 @@ export default function App() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Equipo A (elegí 2)</Label>
+                <Label>Equipo A (elige 2)</Label>
                 <PlayerCombobox
                   players={ctx.jugadores}
                   value={form.equipoA}
@@ -305,7 +305,7 @@ export default function App() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Equipo B (elegí 2)</Label>
+                <Label>Equipo B (elige 2)</Label>
                 <PlayerCombobox
                   players={ctx.jugadores}
                   value={form.equipoB}
