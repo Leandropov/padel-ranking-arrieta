@@ -1,5 +1,5 @@
 /**
- * Config.gs
+ * Config.js
  * Constantes y lecturas de configuración. Todo lo que el club pueda
  * necesitar ajustar (rangos de categoría, K, D, canchas) vive en la
  * pestaña "Categorías" de la planilla, no hardcodeado en el script.
@@ -11,7 +11,7 @@ const SHEET_RANKING = 'Ranking';
 const SHEET_HISTORIAL = 'Historial';
 
 // Fila donde arranca el bloque de configuración dentro de "Categorías"
-// (debajo de la tabla de rangos). Ver Setup.gs para el layout exacto.
+// (debajo de la tabla de rangos). Ver Setup.js para el layout exacto.
 const CONFIG_ROW_K = 9;
 const CONFIG_ROW_D = 10;
 const CONFIG_ROW_CANCHAS = 11;

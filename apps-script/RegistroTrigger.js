@@ -1,5 +1,5 @@
 /**
- * RegistroTrigger.gs
+ * RegistroTrigger.js
  * Se dispara solo cuando alguien completa el Formulario de Registro.
  * Calcula el puntaje inicial (punto medio del rango de la categoría
  * elegida) y agrega la fila a "Jugadores". El puntaje ACTUAL queda

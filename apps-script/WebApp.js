@@ -1,5 +1,5 @@
 /**
- * WebApp.gs
+ * WebApp.js
  * Backend de la web app de resultado. El frontend (la página que ve el
  * jugador) vive aparte, en la carpeta web/ (React), hospedado donde se
  * decida desplegarlo -- este archivo ya no sirve HTML, solo responde
@@ -18,10 +18,10 @@
  * (mismo horario para todas las canchas) y decide si se salta directo
  * a cargar jugadores, si hay que elegir entre varias canchas, o si cae
  * al selector manual de respaldo. Ver getBloqueRecienTerminado_ en
- * Config.gs.
+ * Config.js.
  *
  * doGet() también sirve la página de ranking (?vista=ranking, ver
- * getRanking() en Ranking.gs) -- mismo backend, misma implementación
+ * getRanking() en Ranking.js) -- mismo backend, misma implementación
  * de Apps Script, un solo query param decide qué devolver.
  */
 

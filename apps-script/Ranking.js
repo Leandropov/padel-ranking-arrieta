@@ -1,5 +1,5 @@
 /**
- * Ranking.gs
+ * Ranking.js
  * Backend de la página de ranking (solo lectura). getRanking() arma la
  * lista ya ordenada (leyendo directamente la pestaña Ranking, que son
  * fórmulas sobre Jugadores) y le agrega, por jugador, el delta de su

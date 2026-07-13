@@ -1,5 +1,5 @@
 /**
- * Setup.gs
+ * Setup.js
  * Correr UNA sola vez la función setupClub() desde el editor de Apps Script.
  * Crea la planilla con sus 4 pestañas, el formulario de registro,
  * los triggers, y deja todo listo para usar.
@@ -135,7 +135,7 @@ function setupHistorial_(ss) {
   sheet.autoResizeColumns(1, 15);
   // Texto plano para que Sheets no autoconvierta "2026-07-12" / "19:30" a
   // un valor de fecha interno -- eso rompería la comparación exacta que
-  // hace hayDuplicado_ en WebApp.gs.
+  // hace hayDuplicado_ en WebApp.js.
   sheet.getRange('B2:B').setNumberFormat('@');
   sheet.getRange('D2:D').setNumberFormat('@');
 }

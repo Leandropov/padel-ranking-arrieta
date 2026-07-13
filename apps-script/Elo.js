@@ -1,5 +1,5 @@
 /**
- * Elo.gs
+ * Elo.js
  * Implementación de la fórmula tipo Elo para parejas de pádel.
  *
  * Calibración de K y D (ver también los valores en Categorías!B9:B10):
