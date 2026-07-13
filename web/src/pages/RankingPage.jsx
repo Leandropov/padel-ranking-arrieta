@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowDownIcon, ArrowUpIcon, MinusIcon, SearchIcon } from 'lucide-react';
 
@@ -31,12 +32,10 @@ export default function RankingPage() {
       });
   }, []);
 
-  const filtrados = useMemo(() => {
+  const tabs = useMemo(() => {
     if (!data) return [];
-    const texto = busqueda.trim().toLowerCase();
-    if (!texto) return data.jugadores;
-    return data.jugadores.filter((j) => j.nombre.toLowerCase().includes(texto));
-  }, [busqueda, data]);
+    return [{ valor: 'global', etiqueta: 'Global' }, ...(data.categorias || []).map((c) => ({ valor: c, etiqueta: c }))];
+  }, [data]);
 
   if (estado === 'cargando') {
     return (
@@ -82,39 +81,77 @@ export default function RankingPage() {
             />
           </div>
 
-          {busqueda.trim() && filtrados.length === 0 && (
-            <p className="text-sm text-muted-foreground">No encontramos a nadie con ese nombre.</p>
-          )}
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">Posición</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead className="text-right">Puntaje</TableHead>
-                <TableHead className="text-right">Último partido</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtrados.map((j) => (
-                <TableRow key={j.nombre}>
-                  <TableCell className="text-muted-foreground">{j.puesto}</TableCell>
-                  <TableCell className="font-medium">{j.nombre}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{j.categoria}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{redondear1_(j.puntaje)}</TableCell>
-                  <TableCell className="text-right">
-                    <Tendencia delta={j.deltaUltimoPartido} fecha={j.fechaUltimoPartido} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Tabs defaultValue="global">
+            <div className="overflow-x-auto">
+              <TabsList>
+                {tabs.map((t) => (
+                  <TabsTrigger key={t.valor} value={t.valor}>
+                    {t.etiqueta}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            {tabs.map((t) => (
+              <TabsContent key={t.valor} value={t.valor}>
+                <TablaCategoria
+                  jugadores={t.valor === 'global' ? data.jugadores : data.jugadores.filter((j) => j.categoria === t.valor)}
+                  busqueda={busqueda}
+                  mostrarCategoria={t.valor === 'global'}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function TablaCategoria({ jugadores, busqueda, mostrarCategoria }) {
+  const filtrados = useMemo(() => {
+    const conPosicion = jugadores.map((j, i) => ({ ...j, posicion: i + 1 }));
+    const texto = busqueda.trim().toLowerCase();
+    if (!texto) return conPosicion;
+    return conPosicion.filter((j) => j.nombre.toLowerCase().includes(texto));
+  }, [jugadores, busqueda]);
+
+  if (jugadores.length === 0) {
+    return <p className="py-4 text-sm text-muted-foreground">Todavía no hay jugadores en esta categoría.</p>;
+  }
+
+  if (busqueda.trim() && filtrados.length === 0) {
+    return <p className="py-4 text-sm text-muted-foreground">No encontramos a nadie con ese nombre.</p>;
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-16">Posición</TableHead>
+          <TableHead>Nombre</TableHead>
+          {mostrarCategoria && <TableHead>Categoría</TableHead>}
+          <TableHead className="text-right">Puntaje</TableHead>
+          <TableHead className="text-right">Último partido</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {filtrados.map((j) => (
+          <TableRow key={j.nombre}>
+            <TableCell className="text-muted-foreground">{j.posicion}</TableCell>
+            <TableCell className="font-medium">{j.nombre}</TableCell>
+            {mostrarCategoria && (
+              <TableCell>
+                <Badge variant="outline">{j.categoria}</Badge>
+              </TableCell>
+            )}
+            <TableCell className="text-right">{redondear1_(j.puntaje)}</TableCell>
+            <TableCell className="text-right">
+              <Tendencia delta={j.deltaUltimoPartido} fecha={j.fechaUltimoPartido} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 

@@ -11,7 +11,7 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
   (carpeta `web/`, React), no un Google Form ni una página nativa de
   Apps Script.** Google Forms no tiene una pantalla nativa de "revisá
   el resumen antes de enviar". Esta web app sí la tiene (paso
-  Formulario → Confirmación → Enviado). Apps Script (`WebApp.gs`) queda
+  Formulario → Confirmación → Enviado). Apps Script (`WebApp.js`) queda
   solo como backend: responde JSON (contexto y guardado de resultado),
   ya no sirve HTML. Como el punto 6 (QR) usa esta misma página, no se
   duplica trabajo: la detección automática de horario vive ahí, no se
@@ -39,43 +39,51 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
 
 ## Instalación (una sola vez)
 
-1. Andá a [script.google.com](https://script.google.com) → Nuevo
-   proyecto.
-2. Borrá el contenido de `Code.gs` que viene por defecto.
-3. Creá un archivo por cada uno de estos y pegá el contenido
-   correspondiente de la carpeta `apps-script/`:
-   - `Config.gs`
-   - `Setup.gs`
-   - `RegistroTrigger.gs`
-   - `Elo.gs`
-   - `WebApp.gs`
-4. Arriba, en el desplegable de funciones, elegí `setupClub` y tocá
-   **Ejecutar**. La primera vez pide autorización — es tu propio script
-   accediendo a tus propios Sheets/Forms, aceptá los permisos.
-5. Abrí **Ver → Registros de ejecución** (o `Ctrl+Enter`) para ver los
-   dos links que imprime: el de la planilla y el del formulario de
+1. **Habilitá la API de Apps Script** en tu cuenta de Google: andá a
+   [script.google.com/home/usersettings](https://script.google.com/home/usersettings)
+   y activá "Apps Script API". Sin esto, `clasp` no puede pushear código.
+2. Instalá dependencias y logueate con `clasp` (la CLI oficial de Apps
+   Script), usando la cuenta de Google del club:
+   ```
+   npx @google/clasp login
+   ```
+3. Este repo ya tiene un `.clasp.json` apuntando al proyecto real
+   (`rootDir: apps-script/`). Si estás armando el proyecto desde cero,
+   creá uno nuevo con `npx @google/clasp create --type webapp --rootDir
+   ./apps-script` y reemplazá el `scriptId` en `.clasp.json`.
+4. Subí el código:
+   ```
+   npx @google/clasp push
+   ```
+5. En el editor de Apps Script (`npx @google/clasp open`), elegí
+   `setupClub` en el desplegable de funciones y tocá **Ejecutar**. La
+   primera vez pide autorización — es tu propio script accediendo a tus
+   propios Sheets/Forms, aceptá los permisos.
+6. **Ver → Registros de ejecución** (o `Ctrl+Enter`) para ver los dos
+   links que imprime: el de la planilla y el del formulario de
    registro. Guardalos.
-6. Publicá el backend: **Implementar → Nueva implementación**, tipo
-   **Aplicación web**. Configurá:
-   - Ejecutar como: **Yo (tu cuenta)**
-   - Quién tiene acceso: **Cualquier usuario**
-   Tocá Implementar y copiá el link (termina en `/exec`). Este link
-   responde JSON, no una página — no lo abras esperando ver un
-   formulario.
-7. Configurá y publicá el frontend: en `web/src/lib/api.js`, pegá ese
-   link en `API_URL`. Después corré `cd web && npm install && npm run
-   build` y publicá la carpeta `web/dist` en el hosting que elijas
-   (Netlify, Vercel, GitHub Pages, etc.). El link público que te da ese
-   hosting es el que vas a compartir con el club.
-8. Generá el QR de **ese link del hosting** (no el de Apps Script) e
-   imprimilo una sola vez — no cambia mientras no cambies de hosting.
-   Actualizar `web/` y volver a hacer build + deploy no rompe el QR;
-   solo lo rompería publicar en una URL nueva. Del lado del backend, una
-   actualización de código normal ("Gestionar implementaciones → Editar
-   → Nueva versión") tampoco rompe el link de `/exec`.
+7. Publicá el backend (primera vez, desde el editor web): **Implementar
+   → Nueva implementación**, tipo **Aplicación web**, ejecutar como
+   "Yo", acceso "Cualquier usuario". Copiá el link (termina en `/exec`)
+   — responde JSON, no lo abras esperando ver un formulario.
+8. Configurá y publicá el frontend: en `web/src/lib/api.js`, pegá ese
+   link en `API_URL`. Después `cd web && npm install && npm run build`
+   y publicá `web/dist` en el hosting que elijas (Netlify, Vercel,
+   GitHub Pages, etc.). Ese link público es el que se comparte con el
+   club y el que se convierte en QR.
 
-Con eso ya está: planilla, formulario de registro y web app de
-resultado (con detección de horario) funcionando.
+### Actualizar el backend después de la instalación
+
+Cada vez que cambie algo en `apps-script/`:
+```
+npx @google/clasp push
+npx @google/clasp deployments        # confirmar el ID de la implementación activa
+npx @google/clasp deploy -i <ID> -d "descripción del cambio"
+```
+`push` sube el código al editor; `deploy -i <ID>` publica esa versión
+en el link `/exec` que ya usa el frontend, sin generar un link nuevo.
+Si se omite `-i <ID>`, `clasp deploy` crea una implementación nueva con
+otra URL — no es lo que queremos.
 
 ## Antes de invitar jugadores
 
@@ -125,7 +133,7 @@ Para cada partido: promedio de puntaje de la pareja A, promedio de la
 pareja B, resultado esperado de A con la fórmula Elo, delta de puntos
 = `K × (resultado_real_A - resultado_esperado_A)`. La pareja B recibe
 exactamente el delta opuesto (sistema de suma cero). El detalle está en
-`Elo.gs`.
+`Elo.js`.
 
 ## Administración
 

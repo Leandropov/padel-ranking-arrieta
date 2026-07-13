@@ -40,6 +40,7 @@ export default function ResultadoPage() {
   const [confirmError, setConfirmError] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [resultadoEnvio, setResultadoEnvio] = useState(null);
+  const [bloqueElegido, setBloqueElegido] = useState(false);
 
   useEffect(() => {
     getContext()
@@ -63,6 +64,7 @@ export default function ResultadoPage() {
 
   function elegirBloque(cancha, hora) {
     setForm((f) => ({ ...f, cancha, hora }));
+    setBloqueElegido(true);
   }
 
   function cancelarAdmin() {
@@ -196,7 +198,7 @@ export default function ResultadoPage() {
           </a>
         </CardHeader>
         <CardContent className="space-y-4">
-          {modo === 'elegir' ? (
+          {modo === 'elegir' && !bloqueElegido ? (
             <div className="space-y-2">
               <p className="text-sm">Terminaron varios partidos casi al mismo tiempo. Elige cuál cargar:</p>
               {ctx.candidatos.map((cancha) => (
@@ -225,6 +227,20 @@ export default function ResultadoPage() {
                   <AlertDescription>
                     No detectamos un partido recién terminado (o ya están todos cargados). Elige cancha y hora
                     manualmente.
+                  </AlertDescription>
+                </Alert>
+              )}
+              {modo === 'elegir' && bloqueElegido && (
+                <Alert>
+                  <AlertDescription>
+                    Vas a cargar el resultado de {form.cancha} ({ctx.bloque.inicio}–{ctx.bloque.fin}).{' '}
+                    <button
+                      type="button"
+                      className="underline"
+                      onClick={() => setBloqueElegido(false)}
+                    >
+                      Elegir otra cancha
+                    </button>
                   </AlertDescription>
                 </Alert>
               )}

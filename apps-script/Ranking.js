@@ -31,7 +31,13 @@ function getRanking() {
       };
     });
 
-  return { jugadores: jugadores, actualizado: hoyISO_() };
+  // El orden de las categorías sale de la pestaña Categorías (de menor a
+  // mayor rango de puntos), no de en qué orden aparecen en el ranking --
+  // así el frontend arma los tabs en el orden esperado aunque alguna
+  // categoría todavía no tenga jugadores.
+  const categorias = getCategoryRanges_().map((c) => c.nombre);
+
+  return { jugadores: jugadores, categorias: categorias, actualizado: hoyISO_() };
 }
 
 /**
