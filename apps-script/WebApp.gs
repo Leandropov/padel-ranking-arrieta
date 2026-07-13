@@ -1,8 +1,9 @@
 /**
  * WebApp.gs
  * Backend de la web app de resultado. El frontend (la página que ve el
- * jugador) vive aparte, hospedado en Netlify -- este archivo ya no sirve
- * HTML, solo responde JSON: doGet() para pedir el contexto (jugadores,
+ * jugador) vive aparte, en la carpeta web/ (React), hospedado donde se
+ * decida desplegarlo -- este archivo ya no sirve HTML, solo responde
+ * JSON: doGet() para pedir el contexto (jugadores,
  * canchas, detección de bloque horario) y doPost() para guardar un
  * resultado. Se comunican por fetch() desde afuera, no por
  * google.script.run.

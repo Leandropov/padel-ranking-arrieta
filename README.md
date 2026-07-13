@@ -7,13 +7,15 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
 
 ## Qué se resolvió distinto al diseño original, y por qué
 
-- **El "formulario de resultado" (punto 3) es una web app de Apps
-  Script, no un Google Form.** Google Forms no tiene una pantalla nativa
-  de "revisá el resumen antes de enviar". La web app sí la tiene (paso
-  Formulario → Confirmación → Enviado). Como el punto 6 (QR) también
-  necesita ser una web app, no se duplica trabajo: cuando construyamos
-  el QR, se le agrega la detección automática de horario a esta misma
-  página, no se reconstruye.
+- **El "formulario de resultado" (punto 3) es una web app aparte
+  (carpeta `web/`, React), no un Google Form ni una página nativa de
+  Apps Script.** Google Forms no tiene una pantalla nativa de "revisá
+  el resumen antes de enviar". Esta web app sí la tiene (paso
+  Formulario → Confirmación → Enviado). Apps Script (`WebApp.gs`) queda
+  solo como backend: responde JSON (contexto y guardado de resultado),
+  ya no sirve HTML. Como el punto 6 (QR) usa esta misma página, no se
+  duplica trabajo: la detección automática de horario vive ahí, no se
+  reconstruye aparte.
 - **El "Ranking" y el "Puntaje actual" de cada jugador son 100%
   fórmulas que leen Historial**, no valores que un script sobrescribe.
   Esto es justo lo que pedías en el punto 8: si el administrador carga
@@ -47,23 +49,30 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
    - `RegistroTrigger.gs`
    - `Elo.gs`
    - `WebApp.gs`
-   - `ResultForm.html` (al crearlo, elegí tipo **HTML**, no script)
 4. Arriba, en el desplegable de funciones, elegí `setupClub` y tocá
    **Ejecutar**. La primera vez pide autorización — es tu propio script
    accediendo a tus propios Sheets/Forms, aceptá los permisos.
 5. Abrí **Ver → Registros de ejecución** (o `Ctrl+Enter`) para ver los
    dos links que imprime: el de la planilla y el del formulario de
    registro. Guardalos.
-6. Publicá la web app de resultado: **Implementar → Nueva
-   implementación**, tipo **Aplicación web**. Configurá:
+6. Publicá el backend: **Implementar → Nueva implementación**, tipo
+   **Aplicación web**. Configurá:
    - Ejecutar como: **Yo (tu cuenta)**
    - Quién tiene acceso: **Cualquier usuario**
-   Tocá Implementar y copiá el link.
-7. Generá el QR de ese link (con cualquier generador de QR) e imprimilo
-   una sola vez — el link no cambia mientras no vuelvas a hacer
-   "Nueva implementación" (una actualización de código normal, con
-   "Gestionar implementaciones → Editar → Nueva versión", no rompe el
-   QR).
+   Tocá Implementar y copiá el link (termina en `/exec`). Este link
+   responde JSON, no una página — no lo abras esperando ver un
+   formulario.
+7. Configurá y publicá el frontend: en `web/src/lib/api.js`, pegá ese
+   link en `API_URL`. Después corré `cd web && npm install && npm run
+   build` y publicá la carpeta `web/dist` en el hosting que elijas
+   (Netlify, Vercel, GitHub Pages, etc.). El link público que te da ese
+   hosting es el que vas a compartir con el club.
+8. Generá el QR de **ese link del hosting** (no el de Apps Script) e
+   imprimilo una sola vez — no cambia mientras no cambies de hosting.
+   Actualizar `web/` y volver a hacer build + deploy no rompe el QR;
+   solo lo rompería publicar en una URL nueva. Del lado del backend, una
+   actualización de código normal ("Gestionar implementaciones → Editar
+   → Nueva versión") tampoco rompe el link de `/exec`.
 
 Con eso ya está: planilla, formulario de registro y web app de
 resultado (con detección de horario) funcionando.
