@@ -86,7 +86,8 @@ function getContext() {
   let candidatos = [];
   if (bloque) {
     const historialSheet = getSpreadsheet_().getSheetByName(SHEET_HISTORIAL);
-    candidatos = config.canchas.filter((cancha) => !hayDuplicado_(historialSheet, cancha, fecha, bloque.fin));
+    const claves = leerClavesHistorial_(historialSheet);
+    candidatos = config.canchas.filter((cancha) => !hayDuplicado_(claves, cancha, fecha, bloque.fin));
   }
 
   let modo = 'manual';
@@ -127,44 +128,59 @@ function submitResultado(payload) {
     }
   });
 
-  if (hayDuplicado_(historialSheet, payload.cancha, payload.fecha, payload.hora)) {
-    throw new Error(
-      'Ya existe un resultado cargado para ' + payload.cancha + ' el ' + payload.fecha + ' a las ' + payload.hora + '.'
-    );
+  // Lock: sin esto, dos envíos casi simultáneos para el mismo partido
+  // pueden leer ambos "no hay duplicado" antes de que cualquiera de los
+  // dos escriba, y el delta de Elo se aplicaría dos veces.
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const claves = leerClavesHistorial_(historialSheet);
+    if (hayDuplicado_(claves, payload.cancha, payload.fecha, payload.hora)) {
+      throw new Error(
+        'Ya existe un resultado cargado para ' + payload.cancha + ' el ' + payload.fecha + ' a las ' + payload.hora + '.'
+      );
+    }
+
+    const promedioA = (mapaJugadores[a1].puntaje + mapaJugadores[a2].puntaje) / 2;
+    const promedioB = (mapaJugadores[b1].puntaje + mapaJugadores[b2].puntaje) / 2;
+    const ganoA = payload.ganador === 'A';
+    const deltaA = calcularDeltaA_(promedioA, promedioB, ganoA, config.K, config.D);
+    const deltaB = -deltaA;
+
+    historialSheet.appendRow([
+      new Date(),
+      payload.fecha,
+      payload.cancha,
+      payload.hora,
+      a1,
+      a2,
+      b1,
+      b2,
+      payload.ganador,
+      payload.resultado,
+      deltaA,
+      deltaB,
+      payload.quienEres,
+      payload.cargaAdministracion ? 'Administración' : 'Jugador',
+      payload.cargaAdministracion ? payload.motivo || '' : '',
+    ]);
+
+    return {
+      deltaA: Math.round(deltaA * 10) / 10,
+      deltaB: Math.round(deltaB * 10) / 10,
+      equipoA: [a1, a2],
+      equipoB: [b1, b2],
+    };
+  } finally {
+    lock.releaseLock();
   }
-
-  const promedioA = (mapaJugadores[a1].puntaje + mapaJugadores[a2].puntaje) / 2;
-  const promedioB = (mapaJugadores[b1].puntaje + mapaJugadores[b2].puntaje) / 2;
-  const ganoA = payload.ganador === 'A';
-  const deltaA = calcularDeltaA_(promedioA, promedioB, ganoA, config.K, config.D);
-  const deltaB = -deltaA;
-
-  historialSheet.appendRow([
-    new Date(),
-    payload.fecha,
-    payload.cancha,
-    payload.hora,
-    a1,
-    a2,
-    b1,
-    b2,
-    payload.ganador,
-    payload.resultado,
-    deltaA,
-    deltaB,
-    payload.quienEres,
-    payload.cargaAdministracion ? 'Administración' : 'Jugador',
-    payload.cargaAdministracion ? payload.motivo || '' : '',
-  ]);
-
-  return {
-    deltaA: Math.round(deltaA * 10) / 10,
-    deltaB: Math.round(deltaB * 10) / 10,
-    equipoA: [a1, a2],
-    equipoB: [b1, b2],
-  };
 }
 
+// Estas reglas duplican a mano las de validar() en
+// web/src/pages/ResultadoPage.jsx (no hay forma de compartir código
+// entre un proyecto de Vite y uno de Apps Script sin un build extra) --
+// esta es la que manda (la del cliente es solo para evitar una vuelta
+// de red), si se cambia una regla acá hay que replicarla ahí también.
 function validarPayload_(p, config) {
   if (!p.quienEres) throw new Error('Falta indicar quién completa el formulario.');
   if (!p.cancha) throw new Error('Falta elegir la cancha.');
@@ -183,10 +199,28 @@ function validarPayload_(p, config) {
   }
   if (p.cargaAdministracion) {
     if (!p.motivo) throw new Error('Las cargas por administración necesitan un motivo.');
-    if (String(p.pin || '').trim() !== String(config.pinAdmin).trim()) {
-      throw new Error('PIN de administración incorrecto.');
-    }
+    verificarPin_(p.pin, config);
   }
+}
+
+/**
+ * Limita los intentos de PIN para que no se pueda probar por fuerza
+ * bruta pegándole directo a la API (son solo 10.000 combinaciones de 4
+ * dígitos). Bloquea 15 minutos después de 5 intentos fallidos. Apps
+ * Script no expone la IP de quien llama, así que no se puede limitar
+ * por origen -- esto es lo más granular que se puede hacer acá.
+ */
+function verificarPin_(pin, config) {
+  const cache = CacheService.getScriptCache();
+  const intentosFallidos = Number(cache.get('pinAdminFallos') || 0);
+  if (intentosFallidos >= 5) {
+    throw new Error('Demasiados intentos con PIN incorrecto. Probá de nuevo en 15 minutos.');
+  }
+  if (String(pin || '').trim() !== String(config.pinAdmin).trim()) {
+    cache.put('pinAdminFallos', String(intentosFallidos + 1), 900); // 15 min
+    throw new Error('PIN de administración incorrecto.');
+  }
+  cache.remove('pinAdminFallos');
 }
 
 function leerJugadores_(sheet) {
@@ -201,13 +235,25 @@ function leerJugadores_(sheet) {
   return mapa;
 }
 
-function hayDuplicado_(historialSheet, cancha, fecha, hora) {
+/**
+ * Lee Fecha+Cancha+Hora de todo Historial UNA sola vez y arma un Set de
+ * claves "fecha|cancha|hora". getContext() necesita chequear varias
+ * canchas contra el mismo Historial (una por cada cancha candidata);
+ * sin esto, cada chequeo releía la hoja entera desde cero.
+ */
+function leerClavesHistorial_(historialSheet) {
   const lastRow = historialSheet.getLastRow();
-  if (lastRow < 2) return false;
+  const claves = new Set();
+  if (lastRow < 2) return claves;
   const values = historialSheet.getRange(2, 2, lastRow - 1, 3).getValues(); // Fecha, Cancha, Hora
-  return values.some(([fechaFila, canchaFila, horaFila]) => {
+  values.forEach(([fechaFila, canchaFila, horaFila]) => {
     const fechaFilaStr =
       fechaFila instanceof Date ? Utilities.formatDate(fechaFila, Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(fechaFila);
-    return fechaFilaStr === fecha && String(canchaFila) === cancha && String(horaFila) === hora;
+    claves.add(fechaFilaStr + '|' + canchaFila + '|' + horaFila);
   });
+  return claves;
+}
+
+function hayDuplicado_(claves, cancha, fecha, hora) {
+  return claves.has(fecha + '|' + cancha + '|' + hora);
 }

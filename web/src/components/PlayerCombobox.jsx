@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Combobox,
   ComboboxChip,
@@ -29,8 +30,14 @@ export function PlayerCombobox({
   max = 2,
   placeholder = 'Buscar jugador…',
 }) {
-  const excludeSet = new Set(exclude);
-  const items = players.filter((n) => !excludeSet.has(n)).map((n) => ({ label: n, value: n }));
+  // Memoizado: sin esto, tipear en cualquier otro campo del formulario
+  // (ej. el motivo o el resultado) volvía a filtrar+mapear la lista
+  // completa de jugadores en cada uno de los 3 buscadores montados.
+  const excludeSet = useMemo(() => new Set(exclude), [exclude]);
+  const items = useMemo(
+    () => players.filter((n) => !excludeSet.has(n)).map((n) => ({ label: n, value: n })),
+    [players, excludeSet]
+  );
 
   if (multiple) {
     const values = (value || []).map((n) => ({ label: n, value: n }));

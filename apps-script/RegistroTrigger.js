@@ -21,16 +21,26 @@ function onRegistroFormSubmit(e) {
 
   const ss = getSpreadsheet_();
   const sheet = ss.getSheetByName(SHEET_JUGADORES);
-  const fila = sheet.getLastRow() + 1;
 
-  sheet.getRange(fila, 1, 1, 3).setValues([[nombre, categoria, puntajeInicial]]);
-  sheet
-    .getRange(fila, 4)
-    .setFormula(
-      '=C' + fila +
-        ' + SUMIF(Historial!E:E,A' + fila + ',Historial!K:K)' +
-        ' + SUMIF(Historial!F:F,A' + fila + ',Historial!K:K)' +
-        ' + SUMIF(Historial!G:G,A' + fila + ',Historial!L:L)' +
-        ' + SUMIF(Historial!H:H,A' + fila + ',Historial!L:L)'
-    );
+  // Lock: si dos personas se registran casi al mismo tiempo, sin esto
+  // ambas ejecuciones pueden leer el mismo getLastRow() y la segunda
+  // pisa la fila de la primera.
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const fila = sheet.getLastRow() + 1;
+
+    sheet.getRange(fila, 1, 1, 3).setValues([[nombre, categoria, puntajeInicial]]);
+    sheet
+      .getRange(fila, 4)
+      .setFormula(
+        '=C' + fila +
+          ' + SUMIF(Historial!E:E,A' + fila + ',Historial!K:K)' +
+          ' + SUMIF(Historial!F:F,A' + fila + ',Historial!K:K)' +
+          ' + SUMIF(Historial!G:G,A' + fila + ',Historial!L:L)' +
+          ' + SUMIF(Historial!H:H,A' + fila + ',Historial!L:L)'
+      );
+  } finally {
+    lock.releaseLock();
+  }
 }
