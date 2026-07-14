@@ -65,7 +65,7 @@ export default function RankingPage() {
             <CardTitle>Ranking</CardTitle>
             <p className="text-xs text-muted-foreground">Última actualización: {formatearFechaLegible(data.actualizado)}</p>
           </div>
-          <a href="#" className="text-xs text-muted-foreground underline">
+          <a href="#resultado" className="text-xs text-muted-foreground underline">
             Cargar resultado
           </a>
         </CardHeader>

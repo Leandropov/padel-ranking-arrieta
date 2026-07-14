@@ -59,18 +59,29 @@ function getCategoryRange_(nombreCategoria) {
 
 function getConfig_() {
   const sheet = getSpreadsheet_().getSheetByName(SHEET_CATEGORIAS);
-  const K = Number(sheet.getRange(CONFIG_ROW_K, 2).getValue());
-  const D = Number(sheet.getRange(CONFIG_ROW_D, 2).getValue());
-  const canchasRaw = String(sheet.getRange(CONFIG_ROW_CANCHAS, 2).getValue() || '');
+  // Una sola lectura agrupada (filas CONFIG_ROW_K..CONFIG_ROW_PIN_ADMIN,
+  // que son contiguas) en vez de una llamada a getValue() por cada dato
+  // -- son 8 ida-y-vuelta a Sheets menos por cada getConfig_().
+  const filaInicio = CONFIG_ROW_K;
+  const cantidadFilas = CONFIG_ROW_PIN_ADMIN - CONFIG_ROW_K + 1;
+  const valores = sheet
+    .getRange(filaInicio, 2, cantidadFilas, 1)
+    .getValues()
+    .map((r) => r[0]);
+  const val = (fila) => valores[fila - filaInicio];
+
+  const K = Number(val(CONFIG_ROW_K));
+  const D = Number(val(CONFIG_ROW_D));
+  const canchasRaw = String(val(CONFIG_ROW_CANCHAS) || '');
   const canchas = canchasRaw
     .split(',')
     .map((c) => c.trim())
     .filter((c) => c.length > 0);
-  const apertura = String(sheet.getRange(CONFIG_ROW_APERTURA, 2).getValue());
-  const cierre = String(sheet.getRange(CONFIG_ROW_CIERRE, 2).getValue());
-  const duracionBloque = Number(sheet.getRange(CONFIG_ROW_DURACION_BLOQUE, 2).getValue());
-  const ventanaDeteccion = Number(sheet.getRange(CONFIG_ROW_VENTANA_DETECCION, 2).getValue());
-  const pinAdmin = String(sheet.getRange(CONFIG_ROW_PIN_ADMIN, 2).getValue() || '');
+  const apertura = String(val(CONFIG_ROW_APERTURA));
+  const cierre = String(val(CONFIG_ROW_CIERRE));
+  const duracionBloque = Number(val(CONFIG_ROW_DURACION_BLOQUE));
+  const ventanaDeteccion = Number(val(CONFIG_ROW_VENTANA_DETECCION));
+  const pinAdmin = String(val(CONFIG_ROW_PIN_ADMIN) || '');
   return { K, D, canchas, apertura, cierre, duracionBloque, ventanaDeteccion, pinAdmin };
 }
 

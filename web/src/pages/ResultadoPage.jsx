@@ -77,8 +77,13 @@ export default function ResultadoPage() {
     actualizar('pin', '');
   }
 
+  // Estas reglas duplican a mano las de validarPayload_ en
+  // apps-script/WebApp.js (no hay forma de compartir código entre un
+  // proyecto de Vite y uno de Apps Script sin un build extra) -- si se
+  // cambia una regla acá, hay que replicarla ahí, y viceversa.
   function validar(p) {
     if (!p.quienEres) return 'Elige tu nombre de la lista.';
+    if (!p.cancha) return 'Elige la cancha.';
     if (!p.hora) return 'Elige el horario del partido.';
     if (p.equipoA.length !== 2) return 'Elige exactamente 2 jugadores para el equipo A.';
     if (p.equipoB.length !== 2) return 'Elige exactamente 2 jugadores para el equipo B.';
