@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Spinner } from '@/components/ui/spinner';
 import { formatearFechaLegible } from '@/lib/utils';
 import {
   Select,
@@ -16,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ImageIcon } from 'lucide-react';
 
 const vacio = {
   quienEres: '',
@@ -125,7 +125,7 @@ export default function ResultadoPage() {
           </Alert>
         ) : (
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <Spinner className="size-6" />
+            <img src="/pelota-tenis.svg" alt="" className="size-6 animate-spin" />
             Cargando datos del partido…
           </div>
         )}
@@ -143,9 +143,6 @@ export default function ResultadoPage() {
           <CardContent className="space-y-2">
             <Fila label={resultadoEnvio.equipoA.join(' / ')} valor={fmtDelta(resultadoEnvio.deltaA)} />
             <Fila label={resultadoEnvio.equipoB.join(' / ')} valor={fmtDelta(resultadoEnvio.deltaB)} />
-            <Button className="w-full" variant="secondary" onClick={() => location.reload()}>
-              Cargar otro resultado
-            </Button>
             <Button className="w-full" variant="outline" render={<a href="#ranking" />}>
               Ver ranking
             </Button>
@@ -199,11 +196,13 @@ export default function ResultadoPage() {
   return (
     <div className="mx-auto max-w-md p-4">
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Cargar resultado</CardTitle>
-          <a href="#ranking" className="text-xs text-muted-foreground underline">
-            Ver ranking
-          </a>
+        {/* Banner 21:9 -- reemplazar bg-muted + ImageIcon por la imagen real cuando esté lista */}
+        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-muted">
+          <ImageIcon className="size-6 text-muted-foreground/60" />
+        </div>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl leading-tight">Anota el resultado de tu partido</CardTitle>
+          <p className="text-sm text-muted-foreground">Completa los datos del partido para actualizar el ranking.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {modo === 'elegir' && !bloqueElegido ? (
@@ -223,23 +222,15 @@ export default function ResultadoPage() {
           ) : (
             <>
               {modo === 'auto' && (
-                <Alert>
+                <Alert variant="info">
                   <AlertDescription>
                     Detectamos que {ctx.candidatos[0]} terminó a las {ctx.bloque.fin}. Si no es correcto, corrígelo
                     abajo.
                   </AlertDescription>
                 </Alert>
               )}
-              {modo === 'manual' && (
-                <Alert>
-                  <AlertDescription>
-                    No detectamos un partido recién terminado (o ya están todos cargados). Elige cancha y hora
-                    manualmente.
-                  </AlertDescription>
-                </Alert>
-              )}
               {modo === 'elegir' && bloqueElegido && (
-                <Alert>
+                <Alert variant="info">
                   <AlertDescription>
                     Vas a cargar el resultado de {form.cancha} ({ctx.bloque.inicio}–{ctx.bloque.fin}).{' '}
                     <button
@@ -284,9 +275,9 @@ export default function ResultadoPage() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Fecha del partido</Label>
-                {modoAdmin ? (
+              {modoAdmin ? (
+                <div className="space-y-1.5">
+                  <Label>Fecha del partido</Label>
                   <Input
                     type="date"
                     value={fecha}
@@ -294,10 +285,13 @@ export default function ResultadoPage() {
                     onChange={(e) => setFecha(e.target.value)}
                     size="lg"
                   />
-                ) : (
-                  <p className="py-2 text-sm">Hoy ({formatearFechaLegible(fecha)})</p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <Label>Fecha del partido</Label>
+                  <span className="text-sm text-muted-foreground">Hoy ({formatearFechaLegible(fecha)})</span>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label>Hora en que terminó</Label>
@@ -379,7 +373,7 @@ export default function ResultadoPage() {
                   </button>
                 </div>
               ) : (
-                <Alert>
+                <Alert variant="warning">
                   <div className="w-full space-y-3">
                     <div className="space-y-1.5">
                       <Label>Motivo de la carga tardía</Label>

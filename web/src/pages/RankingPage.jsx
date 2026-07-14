@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowDownIcon, ArrowUpIcon, MinusIcon, SearchIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ImageIcon, MinusIcon, SearchIcon } from 'lucide-react';
 
 function redondear1_(n) {
   return Math.round(n * 10) / 10;
@@ -33,14 +32,15 @@ export default function RankingPage() {
 
   const tabs = useMemo(() => {
     if (!data) return [];
-    return [{ valor: 'global', etiqueta: 'Global' }, ...(data.categorias || []).map((c) => ({ valor: c, etiqueta: c }))];
+    const categorias = [...(data.categorias || [])].reverse();
+    return [{ valor: 'global', etiqueta: 'Global' }, ...categorias.map((c) => ({ valor: c, etiqueta: c }))];
   }, [data]);
 
   if (estado === 'cargando') {
     return (
       <div className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Spinner className="size-6" />
+          <img src="/pelota-tenis.svg" alt="" className="size-6 animate-spin" />
           Cargando ranking…
         </div>
       </div>
@@ -60,14 +60,14 @@ export default function RankingPage() {
   return (
     <div className="mx-auto max-w-2xl p-4">
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Ranking</CardTitle>
-            <p className="text-xs text-muted-foreground">Última actualización: {formatearFechaLegible(data.actualizado)}</p>
-          </div>
-          <a href="#resultado" className="text-xs text-muted-foreground underline">
-            Cargar resultado
-          </a>
+        {/* Banner 21:9 -- reemplazar bg-muted + ImageIcon por la imagen real cuando esté lista */}
+        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-muted">
+          <ImageIcon className="size-6 text-muted-foreground/60" />
+        </div>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl leading-tight">Ranking Oficial</CardTitle>
+          <p className="text-sm text-muted-foreground">Busca tu nombre y mira cómo cambiaste después del último partido.</p>
+          <p className="text-xs text-muted-foreground/70">Última actualización: {formatearFechaLegible(data.actualizado)}</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
