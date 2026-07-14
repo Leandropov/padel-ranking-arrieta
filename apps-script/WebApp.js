@@ -123,7 +123,7 @@ function submitResultado(payload) {
   const [b1, b2] = payload.equipoB;
   [payload.quienEres, a1, a2, b1, b2].forEach((nombre) => {
     if (!mapaJugadores[nombre]) {
-      throw new Error('"' + nombre + '" no está en Jugadores. Pídele que se registre primero.');
+      throw new Error('"' + nombre + '" no está anotado en la lista de jugadores. Pídele que se registre primero.');
     }
   });
 
@@ -170,12 +170,12 @@ function validarPayload_(p, config) {
   if (!p.cancha) throw new Error('Falta elegir la cancha.');
   if (!p.fecha || !p.hora) throw new Error('Falta la fecha o la hora del partido.');
   if (p.fecha > hoyISO_()) throw new Error('La fecha del partido no puede ser futura.');
-  if (!Array.isArray(p.equipoA) || p.equipoA.length !== 2) throw new Error('El equipo A debe tener exactamente 2 jugadores.');
-  if (!Array.isArray(p.equipoB) || p.equipoB.length !== 2) throw new Error('El equipo B debe tener exactamente 2 jugadores.');
+  if (!Array.isArray(p.equipoA) || p.equipoA.length !== 2) throw new Error('Elige exactamente 2 jugadores para el equipo A.');
+  if (!Array.isArray(p.equipoB) || p.equipoB.length !== 2) throw new Error('Elige exactamente 2 jugadores para el equipo B.');
   const todos = [...p.equipoA, ...p.equipoB];
   if (new Set(todos).size !== 4) throw new Error('Los 4 jugadores del partido deben ser distintos.');
   if (!p.cargaAdministracion && !todos.includes(p.quienEres)) {
-    throw new Error('Quien completa el formulario debe ser uno de los 4 jugadores del partido (o ser una carga por administración).');
+    throw new Error('Quien completa el formulario debe ser uno de los 4 jugadores del partido. Si no jugaste, usa la opción de administración.');
   }
   if (p.ganador !== 'A' && p.ganador !== 'B') throw new Error('Falta indicar qué equipo ganó.');
   if (!p.resultado || !/^\d-\d(, \d-\d){1,2}$/.test(p.resultado.trim())) {

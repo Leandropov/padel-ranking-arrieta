@@ -16,7 +16,6 @@ function redondear1_(n) {
 
 export default function RankingPage() {
   const [estado, setEstado] = useState('cargando'); // cargando | listo | error
-  const [error, setError] = useState('');
   const [data, setData] = useState(null);
   const [busqueda, setBusqueda] = useState('');
 
@@ -27,7 +26,7 @@ export default function RankingPage() {
         setEstado('listo');
       })
       .catch((err) => {
-        setError(err.message);
+        console.error(err);
         setEstado('error');
       });
   }, []);
@@ -42,7 +41,7 @@ export default function RankingPage() {
       <div className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <Spinner className="size-6" />
-          Cargando…
+          Cargando ranking…
         </div>
       </div>
     );
@@ -52,7 +51,7 @@ export default function RankingPage() {
     return (
       <div className="mx-auto max-w-2xl p-4">
         <Alert variant="error">
-          <AlertDescription>No se pudo cargar el ranking: {error}</AlertDescription>
+          <AlertDescription>No pudimos cargar el ranking. Intenta de nuevo en un momento.</AlertDescription>
         </Alert>
       </div>
     );
@@ -64,7 +63,7 @@ export default function RankingPage() {
         <CardHeader className="flex-row items-center justify-between">
           <div>
             <CardTitle>Ranking</CardTitle>
-            <p className="text-xs text-muted-foreground">Actualizado hoy ({formatearFechaLegible(data.actualizado)})</p>
+            <p className="text-xs text-muted-foreground">Última actualización: {formatearFechaLegible(data.actualizado)}</p>
           </div>
           <a href="#" className="text-xs text-muted-foreground underline">
             Cargar resultado
@@ -72,12 +71,13 @@ export default function RankingPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar tu nombre…"
+              placeholder="Buscar jugador…"
               className="pl-8"
+              size="lg"
             />
           </div>
 
@@ -127,11 +127,11 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria }) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-16">Posición</TableHead>
+          <TableHead className="w-12">N°</TableHead>
           <TableHead>Nombre</TableHead>
           {mostrarCategoria && <TableHead>Categoría</TableHead>}
           <TableHead className="text-right">Puntaje</TableHead>
-          <TableHead className="text-right">Último partido</TableHead>
+          <TableHead className="text-right">Tendencia</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

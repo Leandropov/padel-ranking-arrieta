@@ -53,15 +53,16 @@ export function PlayerCombobox({
                   </ComboboxChip>
                 ))}
                 <ComboboxChipsInput
-                  placeholder={values.length >= max ? 'Máximo alcanzado' : placeholder}
+                  placeholder={values.length >= max ? `Ya elegiste los ${max} jugadores` : placeholder}
                   disabled={values.length >= max}
+                  size="lg"
                 />
               </>
             )}
           </ComboboxValue>
         </ComboboxChips>
         <ComboboxPopup>
-          <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+          <ComboboxEmpty>No encontramos a nadie con ese nombre</ComboboxEmpty>
           <ComboboxList>
             {(item) => (
               <ComboboxItem key={item.value} value={item}>
@@ -81,7 +82,7 @@ export function PlayerCombobox({
       value={selected}
       onValueChange={(nuevo) => onChange(nuevo ? nuevo.value : '')}
     >
-      <ComboboxInput placeholder={placeholder} />
+      <ComboboxInput placeholder={placeholder} size="lg" />
       <ComboboxPopup>
         <ComboboxEmpty>Sin resultados</ComboboxEmpty>
         <ComboboxList>

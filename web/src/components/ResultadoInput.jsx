@@ -22,6 +22,7 @@ export function ResultadoInput({ value, onChange }) {
       placeholder="6-4, 6-3"
       inputMode="numeric"
       pattern="[0-9]*"
+      size="lg"
       onKeyDown={(e) => {
         if (e.key.length === 1 && !/[0-9]/.test(e.key)) {
           e.preventDefault();

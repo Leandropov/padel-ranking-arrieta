@@ -31,7 +31,7 @@ const vacio = {
 
 export default function ResultadoPage() {
   const [paso, setPaso] = useState('cargando');
-  const [errorCarga, setErrorCarga] = useState('');
+  const [errorCarga, setErrorCarga] = useState(false);
   const [ctx, setCtx] = useState(null);
   const [form, setForm] = useState(vacio);
   const [fecha, setFecha] = useState('');
@@ -55,7 +55,10 @@ export default function ResultadoPage() {
         }
         setPaso('form');
       })
-      .catch((err) => setErrorCarga(err.message));
+      .catch((err) => {
+        console.error(err);
+        setErrorCarga(true);
+      });
   }, []);
 
   function actualizar(campo, valor) {
@@ -80,7 +83,7 @@ export default function ResultadoPage() {
     if (p.equipoA.length !== 2) return 'Elige exactamente 2 jugadores para el equipo A.';
     if (p.equipoB.length !== 2) return 'Elige exactamente 2 jugadores para el equipo B.';
     if (!modoAdmin && !p.equipoA.includes(p.quienEres) && !p.equipoB.includes(p.quienEres)) {
-      return 'Quien completa el formulario debe ser uno de los 4 jugadores del partido (o usa la opción de administración si no jugaste este partido).';
+      return 'Quien completa el formulario debe ser uno de los 4 jugadores del partido. Si no jugaste, usa la opción de administración.';
     }
     if (!p.resultado) return 'Falta el resultado (ej: 6-4, 6-3).';
     if (!/^\d-\d(, \d-\d){1,2}$/.test(p.resultado)) return 'Completa el resultado de al menos 2 sets (ej: 6-4, 6-3).';
@@ -113,12 +116,12 @@ export default function ResultadoPage() {
       <div className="mx-auto flex min-h-svh max-w-md items-center justify-center p-4">
         {errorCarga ? (
           <Alert variant="error">
-            <AlertDescription>No se pudo cargar la página: {errorCarga}</AlertDescription>
+            <AlertDescription>No pudimos cargar los datos del partido. Intenta de nuevo en un momento.</AlertDescription>
           </Alert>
         ) : (
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <Spinner className="size-6" />
-            Cargando…
+            Cargando datos del partido…
           </div>
         )}
       </div>
@@ -130,7 +133,7 @@ export default function ResultadoPage() {
       <div className="mx-auto max-w-md p-4">
         <Card>
           <CardHeader>
-            <CardTitle>Resultado registrado</CardTitle>
+            <CardTitle>¡Resultado registrado!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label={resultadoEnvio.equipoA.join(' / ')} valor={fmtDelta(resultadoEnvio.deltaA)} />
@@ -152,13 +155,13 @@ export default function ResultadoPage() {
       <div className="mx-auto max-w-md p-4">
         <Card>
           <CardHeader>
-            <CardTitle>Confirma los datos</CardTitle>
+            <CardTitle>Revisa los datos antes de enviar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label="Quién carga" valor={form.quienEres} />
             <Fila label="Cancha" valor={form.cancha} />
             <Fila label="Fecha" valor={fecha} />
-            <Fila label="Hora fin" valor={form.hora} />
+            <Fila label="Hora" valor={form.hora} />
             <Fila label="Equipo A" valor={form.equipoA.join(' / ')} />
             <Fila label="Equipo B" valor={form.equipoB.join(' / ')} />
             <Fila label="Ganador" valor={'Equipo ' + form.ganador} />
@@ -192,7 +195,7 @@ export default function ResultadoPage() {
     <div className="mx-auto max-w-md p-4">
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Registrar resultado de partido</CardTitle>
+          <CardTitle>Cargar resultado</CardTitle>
           <a href="#ranking" className="text-xs text-muted-foreground underline">
             Ver ranking
           </a>
@@ -217,8 +220,8 @@ export default function ResultadoPage() {
               {modo === 'auto' && (
                 <Alert>
                   <AlertDescription>
-                    Detectamos que {ctx.candidatos[0]} terminó de jugar a las {ctx.bloque.fin}. Si no es así, corrige
-                    los datos abajo.
+                    Detectamos que {ctx.candidatos[0]} terminó a las {ctx.bloque.fin}. Si no es correcto, corrígelo
+                    abajo.
                   </AlertDescription>
                 </Alert>
               )}
@@ -263,7 +266,7 @@ export default function ResultadoPage() {
                   value={form.cancha || null}
                   onValueChange={(v) => actualizar('cancha', v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger size="lg">
                     <SelectValue placeholder="Elige una cancha" />
                   </SelectTrigger>
                   <SelectPopup>
@@ -284,6 +287,7 @@ export default function ResultadoPage() {
                     value={fecha}
                     max={ctx.fecha}
                     onChange={(e) => setFecha(e.target.value)}
+                    size="lg"
                   />
                 ) : (
                   <p className="py-2 text-sm">Hoy ({formatearFechaLegible(fecha)})</p>
@@ -298,7 +302,7 @@ export default function ResultadoPage() {
                   value={form.hora || null}
                   onValueChange={(v) => actualizar('hora', v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger size="lg">
                     <SelectValue placeholder="Elige un horario" />
                   </SelectTrigger>
                   <SelectPopup>
@@ -344,7 +348,7 @@ export default function ResultadoPage() {
                   value={form.ganador}
                   onValueChange={(v) => actualizar('ganador', v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger size="lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectPopup>
@@ -366,18 +370,19 @@ export default function ResultadoPage() {
                     className="text-xs text-muted-foreground underline"
                     onClick={() => setModoAdmin(true)}
                   >
-                    Administración
+                    ¿El partido no se cargó a tiempo?
                   </button>
                 </div>
               ) : (
                 <Alert>
                   <div className="w-full space-y-3">
                     <div className="space-y-1.5">
-                      <Label>Motivo (partido que nunca se registró en su momento)</Label>
+                      <Label>Motivo de la carga tardía</Label>
                       <Input
                         value={form.motivo}
                         placeholder="Ej: el jugador se olvidó de cargarlo"
                         onChange={(e) => actualizar('motivo', e.target.value)}
+                        size="lg"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -387,6 +392,7 @@ export default function ResultadoPage() {
                         inputMode="numeric"
                         value={form.pin}
                         onChange={(e) => actualizar('pin', e.target.value)}
+                        size="lg"
                       />
                     </div>
                     <Button variant="secondary" className="w-full" onClick={cancelarAdmin}>
