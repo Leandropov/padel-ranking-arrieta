@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CircleCheckIcon, ClipboardCheckIcon } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const vacio = {
   quienEres: '',
@@ -198,9 +199,16 @@ export default function ResultadoPage() {
 
   // paso === 'form'
   const modo = ctx.modo;
+  const labelEquipoA = form.equipoA.length === 2 ? form.equipoA.join(' / ') : 'Equipo A';
+  const labelEquipoB = form.equipoB.length === 2 ? form.equipoB.join(' / ') : 'Equipo B';
 
   return (
-    <div className="mx-auto max-w-md p-4">
+    <div className="relative min-h-svh">
+      <div
+        className="fixed inset-0 -z-10 bg-cover bg-center"
+        style={{ backgroundImage: 'url(/fondo-resultado.jpg)' }}
+      />
+      <div className="mx-auto max-w-md p-4">
       <Card>
         <img
           src="/banner-partido.jpg"
@@ -213,8 +221,8 @@ export default function ResultadoPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {modo === 'elegir' && !bloqueElegido ? (
-            <div className="space-y-2">
-              <p className="text-sm">Terminaron varios partidos casi al mismo tiempo. Elige cuál cargar:</p>
+            <div className="space-y-4">
+              <p className="text-sm">Selecciona la cancha en la que acabas de jugar</p>
               {ctx.candidatos.map((cancha) => (
                 <Button
                   key={cancha}
@@ -345,23 +353,21 @@ export default function ResultadoPage() {
 
               <div className="space-y-1.5">
                 <Label>¿Qué equipo ganó?</Label>
-                <Select
+                <ToggleGroup
                   aria-label="Ganador"
-                  items={[
-                    { label: 'Equipo A', value: 'A' },
-                    { label: 'Equipo B', value: 'B' },
-                  ]}
-                  value={form.ganador}
-                  onValueChange={(v) => actualizar('ganador', v)}
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  value={[form.ganador]}
+                  onValueChange={(vals) => vals.length && actualizar('ganador', vals[0])}
                 >
-                  <SelectTrigger size="lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectPopup>
-                    <SelectItem value="A">Equipo A</SelectItem>
-                    <SelectItem value="B">Equipo B</SelectItem>
-                  </SelectPopup>
-                </Select>
+                  <ToggleGroupItem value="A" className="flex-1">
+                    {labelEquipoA}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="B" className="flex-1">
+                    {labelEquipoB}
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
 
               <div className="space-y-1.5">
@@ -421,6 +427,7 @@ export default function ResultadoPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
