@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowDownIcon, ArrowUpIcon, ImageIcon, MinusIcon, SearchIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, MinusIcon, SearchIcon } from 'lucide-react';
 
 function redondear1_(n) {
   return Math.round(n * 10) / 10;
@@ -60,10 +60,11 @@ export default function RankingPage() {
   return (
     <div className="mx-auto max-w-2xl p-4">
       <Card>
-        {/* Banner 21:9 -- reemplazar bg-muted + ImageIcon por la imagen real cuando esté lista */}
-        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-muted">
-          <ImageIcon className="size-6 text-muted-foreground/60" />
-        </div>
+        <img
+          src="/banner-textura.jpg"
+          alt=""
+          className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)] object-cover"
+        />
         <CardHeader className="text-center">
           <CardTitle className="text-2xl leading-tight">Ranking Oficial</CardTitle>
           <p className="text-sm text-muted-foreground">Busca tu nombre y mira cómo cambiaste después del último partido.</p>

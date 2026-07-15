@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ImageIcon } from 'lucide-react';
 
 const vacio = {
   quienEres: '',
@@ -196,10 +195,11 @@ export default function ResultadoPage() {
   return (
     <div className="mx-auto max-w-md p-4">
       <Card>
-        {/* Banner 21:9 -- reemplazar bg-muted + ImageIcon por la imagen real cuando esté lista */}
-        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-muted">
-          <ImageIcon className="size-6 text-muted-foreground/60" />
-        </div>
+        <img
+          src="/banner-partido.jpg"
+          alt=""
+          className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)] object-cover"
+        />
         <CardHeader className="text-center">
           <CardTitle className="text-2xl leading-tight">Anota el resultado de tu partido</CardTitle>
           <p className="text-sm text-muted-foreground">Completa los datos del partido para actualizar el ranking.</p>
