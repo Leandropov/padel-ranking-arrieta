@@ -33,7 +33,12 @@ export function PlayerCombobox({
   // Memoizado: sin esto, tipear en cualquier otro campo del formulario
   // (ej. el motivo o el resultado) volvía a filtrar+mapear la lista
   // completa de jugadores en cada uno de los 3 buscadores montados.
-  const excludeSet = useMemo(() => new Set(exclude), [exclude]);
+  // También se excluyen los ya elegidos en este mismo combobox, para no
+  // poder repetir un jugador dentro del mismo equipo.
+  const excludeSet = useMemo(
+    () => new Set([...exclude, ...(multiple ? value || [] : [])]),
+    [exclude, multiple, value]
+  );
   const items = useMemo(
     () => players.filter((n) => !excludeSet.has(n)).map((n) => ({ label: n, value: n })),
     [players, excludeSet]

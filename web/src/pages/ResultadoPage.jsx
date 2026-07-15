@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CircleCheckIcon, ClipboardCheckIcon } from 'lucide-react';
 
 const vacio = {
   quienEres: '',
@@ -136,8 +137,11 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <CardHeader>
-            <CardTitle>¡Resultado registrado!</CardTitle>
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-muted">
+            <CircleCheckIcon className="size-6 text-muted-foreground/60" />
+          </div>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl leading-tight">¡Resultado registrado!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label={resultadoEnvio.equipoA.join(' / ')} valor={fmtDelta(resultadoEnvio.deltaA)} />
@@ -155,8 +159,11 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Revisa los datos antes de enviar</CardTitle>
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-muted">
+            <ClipboardCheckIcon className="size-6 text-muted-foreground/60" />
+          </div>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl leading-tight">Revisa los datos antes de enviar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label="Quién carga" valor={form.quienEres} />
