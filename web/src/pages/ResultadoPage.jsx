@@ -183,7 +183,7 @@ export default function ResultadoPage() {
               </Alert>
             )}
 
-            <div className="flex flex-col gap-2 pt-2">
+            <div className="flex flex-col gap-4 pt-2">
               <Button onClick={confirmarEnvio} disabled={enviando}>
                 {enviando ? 'Enviando…' : 'Confirmar y enviar'}
               </Button>
@@ -357,14 +357,17 @@ export default function ResultadoPage() {
                   aria-label="Ganador"
                   variant="outline"
                   size="lg"
+                  orientation="vertical"
                   className="w-full"
                   value={[form.ganador]}
                   onValueChange={(vals) => vals.length && actualizar('ganador', vals[0])}
                 >
-                  <ToggleGroupItem value="A" className="flex-1">
+                  {/* h-auto + whitespace-normal: los nombres de una pareja
+                      pueden ser largos y el Toggle por defecto es nowrap */}
+                  <ToggleGroupItem value="A" className="h-auto min-h-10 w-full whitespace-normal py-2 sm:min-h-9">
                     {labelEquipoA}
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="B" className="flex-1">
+                  <ToggleGroupItem value="B" className="h-auto min-h-10 w-full whitespace-normal py-2 sm:min-h-9">
                     {labelEquipoB}
                   </ToggleGroupItem>
                 </ToggleGroup>
