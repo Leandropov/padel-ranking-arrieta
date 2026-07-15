@@ -46,11 +46,35 @@ function getCategoryRanges_() {
   return rangos;
 }
 
+// Ordinal femenino para cada posición, así "4ta", "4a" o "4°" en el
+// formulario matchean contra "Cuarta" en Categorías sin tener que
+// mantener el texto del formulario idéntico al de la planilla.
+const ORDINALES_ = {
+  1: 'primera',
+  2: 'segunda',
+  3: 'tercera',
+  4: 'cuarta',
+  5: 'quinta',
+  6: 'sexta',
+  7: 'séptima',
+  8: 'octava',
+  9: 'novena',
+};
+
+function normalizarNombreCategoria_(texto) {
+  const limpio = String(texto).trim().toLowerCase();
+  const conNumero = limpio.match(/^(\d+)/);
+  if (conNumero) {
+    const ordinal = ORDINALES_[Number(conNumero[1])];
+    if (ordinal) return ordinal;
+  }
+  return limpio;
+}
+
 function getCategoryRange_(nombreCategoria) {
   const rangos = getCategoryRanges_();
-  const match = rangos.find(
-    (r) => r.nombre.toLowerCase() === String(nombreCategoria).trim().toLowerCase()
-  );
+  const buscado = normalizarNombreCategoria_(nombreCategoria);
+  const match = rangos.find((r) => normalizarNombreCategoria_(r.nombre) === buscado);
   if (!match) {
     throw new Error('Categoría no reconocida: "' + nombreCategoria + '"');
   }

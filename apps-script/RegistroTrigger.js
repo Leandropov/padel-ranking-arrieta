@@ -30,7 +30,10 @@ function onRegistroFormSubmit(e) {
   try {
     const fila = sheet.getLastRow() + 1;
 
-    sheet.getRange(fila, 1, 1, 3).setValues([[nombre, categoria, puntajeInicial]]);
+    // rango.nombre (no el texto crudo del formulario): en Jugadores la
+    // categoría debe quedar exactamente como figura en Categorías, que
+    // es contra lo que la página de ranking arma sus tabs.
+    sheet.getRange(fila, 1, 1, 3).setValues([[nombre, rango.nombre, puntajeInicial]]);
     sheet
       .getRange(fila, 4)
       .setFormula(
