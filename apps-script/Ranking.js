@@ -15,17 +15,23 @@ function getRanking() {
   const lastRow = rankingSheet.getLastRow();
   const filas = lastRow >= 2 ? rankingSheet.getRange(2, 1, lastRow - 1, 4).getValues() : [];
   const ultimoPorJugador = ultimoPartidoPorJugador_(historialSheet);
+  const rangos = getCategoryRanges_();
 
   const jugadores = filas
     .filter((row) => row[0])
     .map((row) => {
-      const [nombre, categoria, puntaje, puesto] = row;
+      const [nombre, , puntajeRaw, puesto] = row;
+      const puntaje = Number(puntajeRaw);
       const ultimo = ultimoPorJugador[nombre] || null;
       return {
         puesto: Number(puesto),
         nombre: String(nombre),
-        categoria: String(categoria),
-        puntaje: Number(puntaje),
+        // La categoría se recalcula por puntaje actual, no por la que se
+        // declaró al registrarse (columna B de Jugadores) -- así alguien
+        // que subió o bajó de rango aparece solo en la pestaña que le
+        // corresponde hoy, sin que nadie tenga que reasignarla a mano.
+        categoria: categoriaPorPuntaje_(puntaje, rangos),
+        puntaje: puntaje,
         deltaUltimoPartido: ultimo ? Math.round(ultimo.delta * 10) / 10 : null,
         fechaUltimoPartido: ultimo ? ultimo.fecha : null,
       };
@@ -35,9 +41,23 @@ function getRanking() {
   // mayor rango de puntos), no de en qué orden aparecen en el ranking --
   // así el frontend arma los tabs en el orden esperado aunque alguna
   // categoría todavía no tenga jugadores.
-  const categorias = getCategoryRanges_().map((c) => c.nombre);
+  const categorias = rangos.map((c) => c.nombre);
 
   return { jugadores: jugadores, categorias: categorias, actualizado: hoyISO_() };
+}
+
+/**
+ * A qué categoría corresponde un puntaje, según los rangos de la
+ * pestaña Categorías. Si el puntaje quedó fuera de todos los rangos
+ * definidos (por ejemplo, alguien superó el techo de la categoría más
+ * alta y el club no cargó una superior), se lo deja en el extremo más
+ * cercano en vez de romper -- nunca debería faltarle categoría a nadie.
+ */
+function categoriaPorPuntaje_(puntaje, rangos) {
+  const enRango = rangos.find((r) => puntaje >= r.min && puntaje <= r.max);
+  if (enRango) return enRango.nombre;
+  const ordenados = [...rangos].sort((a, b) => a.min - b.min);
+  return puntaje < ordenados[0].min ? ordenados[0].nombre : ordenados[ordenados.length - 1].nombre;
 }
 
 /**
