@@ -402,6 +402,16 @@ export default function ResultadoPage() {
                 <ResultadoInput value={form.resultado} onChange={(v) => actualizar('resultado', v)} />
               </div>
 
+              {formError && (
+                <Alert variant="error">
+                  <AlertDescription>{formError}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button className="w-full" onClick={irAConfirmar}>
+                Revisar antes de enviar
+              </Button>
+
               {!modoAdmin ? (
                 <div className="pt-2 text-center">
                   <button
@@ -440,16 +450,6 @@ export default function ResultadoPage() {
                   </div>
                 </Alert>
               )}
-
-              {formError && (
-                <Alert variant="error">
-                  <AlertDescription>{formError}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button className="w-full" onClick={irAConfirmar}>
-                Revisar antes de enviar
-              </Button>
             </>
           )}
         </CardContent>
