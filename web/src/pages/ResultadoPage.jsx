@@ -211,7 +211,7 @@ export default function ResultadoPage() {
       <div className="mx-auto max-w-md p-4">
       <Card>
         <img
-          src="/banner-partido.jpg"
+          src="/portada-partido.jpg"
           alt=""
           className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)] object-cover"
         />

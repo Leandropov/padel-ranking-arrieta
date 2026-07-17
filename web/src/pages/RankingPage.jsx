@@ -61,7 +61,7 @@ export default function RankingPage() {
     <div className="mx-auto max-w-2xl p-4">
       <Card>
         <img
-          src="/banner-textura.jpg"
+          src="/portada-ranking.jpg"
           alt=""
           className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)] object-cover"
         />
