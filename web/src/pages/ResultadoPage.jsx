@@ -144,10 +144,12 @@ export default function ResultadoPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl leading-tight">¡Resultado registrado!</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Fila label={resultadoEnvio.equipoA.join(' / ')} valor={fmtDelta(resultadoEnvio.deltaA)} />
-            <Fila label={resultadoEnvio.equipoB.join(' / ')} valor={fmtDelta(resultadoEnvio.deltaB)} />
-            <Button className="w-full" variant="outline" render={<a href="#ranking" />}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Fila label={resultadoEnvio.equipoA.join(' / ')} delta={resultadoEnvio.deltaA} />
+              <Fila label={resultadoEnvio.equipoB.join(' / ')} delta={resultadoEnvio.deltaB} />
+            </div>
+            <Button className="w-full" render={<a href="#ranking" />}>
               Ver ranking
             </Button>
           </CardContent>
@@ -435,11 +437,11 @@ export default function ResultadoPage() {
   );
 }
 
-function Fila({ label, valor }) {
+function Fila({ label, delta }) {
   return (
     <div className="flex justify-between border-b py-1.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <strong>{valor}</strong>
+      <strong className={delta > 0 ? 'text-success' : 'text-destructive'}>{fmtDelta(delta)}</strong>
     </div>
   );
 }
