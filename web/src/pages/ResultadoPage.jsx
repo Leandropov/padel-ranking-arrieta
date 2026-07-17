@@ -46,7 +46,7 @@ export default function ResultadoPage() {
   useEffect(() => {
     getContext()
       .then((data) => {
-        setCtx(data);
+        setCtx({ ...data, jugadores: [...data.jugadores].sort((a, b) => a.localeCompare(b, 'es')) });
         setFecha(data.fecha);
         if (data.modo === 'auto') {
           const cancha = data.candidatos[0];
