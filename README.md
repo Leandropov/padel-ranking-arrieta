@@ -72,7 +72,7 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
    el que se comparte con el club y el que se convierte en QR.
 
 **Este proyecto ya está publicado en Vercel**:
-[padel-ranking-arrieta-little-busy.vercel.app](https://padel-ranking-arrieta-little-busy.vercel.app).
+[padel-ranking-arrieta.vercel.app](https://padel-ranking-arrieta.vercel.app).
 El proyecto de Vercel (`padel-ranking-arrieta`, team `little-busy`) está
 conectado al repo de GitHub con Root Directory `web`, así que cada push a
 `main` se publica solo — no hace falta correr ningún comando de deploy a
