@@ -36,6 +36,20 @@ export default function RankingPage() {
     return [{ valor: 'global', etiqueta: 'Global' }, ...categorias.map((c) => ({ valor: c, etiqueta: c }))];
   }, [data]);
 
+  // Un color por categoría, en una progresión continua de frío (nivel
+  // bajo) a cálido (nivel alto) -- se lee como "subiendo de nivel" en
+  // vez de una mezcla de colores sueltos. Si el club agrega más
+  // categorías que colores definidos, se repite el último tono.
+  const ESCALA_CATEGORIAS = ['#4F8FE0', '#3FB6A8', '#4FBF6B', '#E0B23F', '#E2703F'];
+  const coloresPorCategoria = useMemo(() => {
+    const categorias = data?.categorias || [];
+    const mapa = {};
+    categorias.forEach((c, i) => {
+      mapa[c] = ESCALA_CATEGORIAS[Math.min(i, ESCALA_CATEGORIAS.length - 1)];
+    });
+    return mapa;
+  }, [data]);
+
   if (estado === 'cargando') {
     return (
       <div className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-4">
@@ -98,6 +112,7 @@ export default function RankingPage() {
                   jugadores={t.valor === 'global' ? data.jugadores : data.jugadores.filter((j) => j.categoria === t.valor)}
                   busqueda={busqueda}
                   mostrarCategoria={t.valor === 'global'}
+                  coloresPorCategoria={coloresPorCategoria}
                 />
               </TabsContent>
             ))}
@@ -108,7 +123,7 @@ export default function RankingPage() {
   );
 }
 
-function TablaCategoria({ jugadores, busqueda, mostrarCategoria }) {
+function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
   const filtrados = useMemo(() => {
     const conPosicion = jugadores.map((j, i) => ({ ...j, posicion: i + 1 }));
     const texto = busqueda.trim().toLowerCase();
@@ -142,7 +157,15 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria }) {
             <TableCell className="font-medium">{j.nombre}</TableCell>
             {mostrarCategoria && (
               <TableCell>
-                <Badge variant="outline">{j.categoria}</Badge>
+                <Badge
+                  variant="outline"
+                  style={{
+                    color: coloresPorCategoria[j.categoria],
+                    borderColor: coloresPorCategoria[j.categoria],
+                  }}
+                >
+                  {j.categoria}
+                </Badge>
               </TableCell>
             )}
             <TableCell className="text-right">{redondear1_(j.puntaje)}</TableCell>
