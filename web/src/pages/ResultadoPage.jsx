@@ -147,7 +147,7 @@ export default function ResultadoPage() {
             <AlertDescription>No pudimos cargar los datos del partido. Intenta de nuevo en un momento.</AlertDescription>
           </Alert>
         ) : (
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="flex flex-col items-center gap-3 text-white">
             <img src="/pelota-tenis.svg" alt="" className="size-6 animate-spin" />
             Cargando datos del partido…
           </div>
@@ -228,10 +228,6 @@ export default function ResultadoPage() {
 
   return (
     <div className="relative min-h-svh">
-      <div
-        className="fixed inset-0 -z-10 bg-cover bg-center"
-        style={{ backgroundImage: 'url(/fondo-resultado.jpg)' }}
-      />
       <div className="mx-auto max-w-md p-4">
       <Card>
         <img

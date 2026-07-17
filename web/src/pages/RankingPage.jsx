@@ -39,7 +39,7 @@ export default function RankingPage() {
   if (estado === 'cargando') {
     return (
       <div className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 text-white">
           <img src="/pelota-tenis.svg" alt="" className="size-6 animate-spin" />
           Cargando ranking…
         </div>

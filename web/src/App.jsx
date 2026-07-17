@@ -17,5 +17,13 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  return vista === 'ranking' ? <RankingPage /> : <ResultadoPage />;
+  return (
+    <>
+      <div
+        className="fixed inset-0 -z-10 bg-cover bg-center"
+        style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(/fondo-resultado.jpg)' }}
+      />
+      {vista === 'ranking' ? <RankingPage /> : <ResultadoPage />}
+    </>
+  );
 }
