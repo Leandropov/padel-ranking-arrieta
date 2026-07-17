@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Combobox,
   ComboboxChip,
@@ -43,6 +43,9 @@ export function PlayerCombobox({
     () => players.filter((n) => !excludeSet.has(n)).map((n) => ({ label: n, value: n })),
     [players, excludeSet]
   );
+  // Solo se usa en el combobox multiple: cierra el popup solo al llegar
+  // al máximo de jugadores, para no obligar a un clic extra afuera.
+  const [open, setOpen] = useState(false);
 
   if (multiple) {
     const values = (value || []).map((n) => ({ label: n, value: n }));
@@ -51,8 +54,11 @@ export function PlayerCombobox({
         items={items}
         multiple
         value={values}
+        open={open}
+        onOpenChange={setOpen}
         onValueChange={(nuevo) => {
           if (nuevo.length <= max) onChange(nuevo.map((v) => v.value));
+          if (nuevo.length >= max) setOpen(false);
         }}
       >
         <ComboboxChips>

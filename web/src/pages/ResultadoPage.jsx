@@ -66,6 +66,28 @@ export default function ResultadoPage() {
     setForm((f) => ({ ...f, [campo]: valor }));
   }
 
+  // Al elegir "quién eres" lo ubicamos solo en un equipo, para que no
+  // tenga que buscarse a sí mismo de nuevo entre los jugadores. Si ya
+  // había elegido un nombre y lo cambia, movemos ese cambio al mismo
+  // lugar donde había quedado. En modo administración no aplica: quien
+  // carga no necesariamente jugó el partido.
+  function elegirQuienEres(v) {
+    setForm((f) => {
+      let equipoA = f.equipoA;
+      let equipoB = f.equipoB;
+      if (!modoAdmin && v && !equipoA.includes(v) && !equipoB.includes(v)) {
+        if (equipoA.includes(f.quienEres)) {
+          equipoA = equipoA.map((n) => (n === f.quienEres ? v : n));
+        } else if (equipoB.includes(f.quienEres)) {
+          equipoB = equipoB.map((n) => (n === f.quienEres ? v : n));
+        } else if (equipoA.length < 2) {
+          equipoA = [...equipoA, v];
+        }
+      }
+      return { ...f, quienEres: v, equipoA, equipoB };
+    });
+  }
+
   function elegirBloque(cancha, hora) {
     setForm((f) => ({ ...f, cancha, hora }));
     setBloqueElegido(true);
@@ -266,7 +288,7 @@ export default function ResultadoPage() {
                 <PlayerCombobox
                   players={ctx.jugadores}
                   value={form.quienEres}
-                  onChange={(v) => actualizar('quienEres', v)}
+                  onChange={elegirQuienEres}
                   placeholder="Escribe tu nombre…"
                 />
               </div>
