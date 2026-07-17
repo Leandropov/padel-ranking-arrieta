@@ -71,15 +71,15 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
    y publicá `web/dist` en el hosting que elijas. Ese link público es
    el que se comparte con el club y el que se convierte en QR.
 
-**Este proyecto ya está publicado en Netlify**:
-[padel-ranking-arrieta.netlify.app](https://padel-ranking-arrieta.netlify.app).
-El repo incluye `netlify.toml` (`base: web`, `command: npm run build`,
-`publish: dist`) y está linkeado vía Netlify CLI (`.netlify/`, fuera de
-git). Para republicar después de un cambio en `web/`:
+**Este proyecto ya está publicado en Vercel**:
+[padel-ranking-arrieta-little-busy.vercel.app](https://padel-ranking-arrieta-little-busy.vercel.app).
+El proyecto de Vercel (`padel-ranking-arrieta`, team `little-busy`) está
+conectado al repo de GitHub con Root Directory `web`, así que cada push a
+`main` se publica solo — no hace falta correr ningún comando de deploy a
+mano. Para republicar manualmente igual (por ejemplo desde otra máquina
+sin esperar al push):
 ```
-cd web && npm run build
-cd ..
-npx netlify-cli deploy --prod --dir web/dist
+cd web && npx vercel --prod
 ```
 
 ### Actualizar el backend después de la instalación
