@@ -146,8 +146,8 @@ export default function ResultadoPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Fila label={resultadoEnvio.equipoA.join(' / ')} delta={resultadoEnvio.deltaA} />
-              <Fila label={resultadoEnvio.equipoB.join(' / ')} delta={resultadoEnvio.deltaB} />
+              <FilaDelta label={resultadoEnvio.equipoA.join(' / ')} delta={resultadoEnvio.deltaA} />
+              <FilaDelta label={resultadoEnvio.equipoB.join(' / ')} delta={resultadoEnvio.deltaB} />
             </div>
             <Button className="w-full" render={<a href="#ranking" />}>
               Ver ranking
@@ -437,7 +437,16 @@ export default function ResultadoPage() {
   );
 }
 
-function Fila({ label, delta }) {
+function Fila({ label, valor }) {
+  return (
+    <div className="flex justify-between border-b py-1.5 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <strong>{valor}</strong>
+    </div>
+  );
+}
+
+function FilaDelta({ label, delta }) {
   return (
     <div className="flex justify-between border-b py-1.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
