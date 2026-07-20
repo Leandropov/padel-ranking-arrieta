@@ -23,6 +23,7 @@ export function ResultadoInput({ value, onChange }) {
       inputMode="numeric"
       pattern="[0-9]*"
       size="lg"
+      className="font-mono tracking-wide"
       onKeyDown={(e) => {
         if (e.key.length === 1 && !/[0-9]/.test(e.key)) {
           e.preventDefault();

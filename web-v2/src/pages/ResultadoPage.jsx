@@ -160,11 +160,11 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-success/8">
-            <CircleCheckIcon className="size-6 text-success-foreground/70" />
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#06231a]">
+            <CircleCheckIcon className="size-7 text-success" />
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-[32px] leading-[38.4px] font-semibold tracking-[-0.96px]">¡Resultado registrado!</CardTitle>
+            <CardTitle className="text-[34px] leading-[1.08] font-normal tracking-[-0.03em]">¡Resultado registrado!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -184,11 +184,11 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-muted">
-            <ClipboardCheckIcon className="size-6 text-muted-foreground/60" />
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#0a0b0d]">
+            <ClipboardCheckIcon className="size-7 text-primary" />
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-[32px] leading-[38.4px] font-semibold tracking-[-0.96px]">Revisa los datos antes de enviar</CardTitle>
+            <CardTitle className="text-[34px] leading-[1.08] font-normal tracking-[-0.03em]">Revisa los datos antes de enviar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label="Quién carga" valor={form.quienEres} />
@@ -236,15 +236,15 @@ export default function ResultadoPage() {
           preserveAspectRatio="xMidYMid slice"
           className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
         >
-          <rect width="460" height="175" className="fill-primary/25" />
+          <rect width="460" height="175" fill="#0a0b0d" />
           <circle cx="150" cy="90" r="34" className="fill-none stroke-primary" strokeWidth="4" />
-          <circle cx="150" cy="90" r="9" className="fill-foreground/85" />
-          <circle cx="300" cy="60" r="22" className="fill-none stroke-primary" strokeWidth="4" opacity="0.6" />
-          <circle cx="340" cy="120" r="14" className="fill-none stroke-foreground" strokeWidth="3" opacity="0.35" />
+          <circle cx="150" cy="90" r="9" fill="#4d82ff" />
+          <circle cx="300" cy="60" r="22" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="4" />
+          <circle cx="340" cy="120" r="14" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="3" />
         </svg>
         <CardHeader className="text-center">
-          <CardTitle className="text-[32px] leading-[38.4px] font-semibold tracking-[-0.96px]">Anota el resultado de tu partido</CardTitle>
-          <p className="text-sm text-muted-foreground">Completa los datos del partido para actualizar el ranking.</p>
+          <CardTitle className="text-[34px] leading-[1.08] font-normal tracking-[-0.03em]">Anota el resultado de tu partido</CardTitle>
+          <p className="text-base text-muted-foreground">Completa los datos del partido para actualizar el ranking.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {modo === 'elegir' && !bloqueElegido ? (
@@ -393,13 +393,13 @@ export default function ResultadoPage() {
                       pueden ser largos y el Toggle por defecto es nowrap */}
                   <ToggleGroupItem
                     value="A"
-                    className="h-auto min-h-10 w-full whitespace-normal py-2 data-pressed:bg-primary data-pressed:text-primary-foreground sm:min-h-9"
+                    className="h-auto min-h-10 w-full whitespace-normal py-2 data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background sm:min-h-9"
                   >
                     {labelEquipoA}
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="B"
-                    className="h-auto min-h-10 w-full whitespace-normal py-2 data-pressed:bg-primary data-pressed:text-primary-foreground sm:min-h-9"
+                    className="h-auto min-h-10 w-full whitespace-normal py-2 data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background sm:min-h-9"
                   >
                     {labelEquipoB}
                   </ToggleGroupItem>
@@ -481,7 +481,7 @@ function FilaDelta({ label, delta }) {
   return (
     <div className="flex justify-between border-b py-1.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <strong className={delta > 0 ? 'text-success' : 'text-destructive'}>{fmtDelta(delta)}</strong>
+      <strong className={'font-mono tabular-nums ' + (delta > 0 ? 'text-success' : 'text-destructive')}>{fmtDelta(delta)}</strong>
     </div>
   );
 }
