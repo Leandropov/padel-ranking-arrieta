@@ -151,8 +151,11 @@ export function ComboboxPopup(
             "relative flex max-h-full min-w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin) rounded-lg border bg-popover not-dark:bg-clip-padding shadow-lg/5 transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
             className
           )}>
+          {/* Same --available-height fallback as SelectPopup: in-app
+              WebViews can report it as 0, and min(0, 23rem) would still
+              collapse the popup without this fallback. */}
           <ComboboxPrimitive.Popup
-            className="flex max-h-[min(var(--available-height),23rem)] flex-1 flex-col text-foreground"
+            className="flex max-h-[min(var(--available-height,60dvh),23rem)] flex-1 flex-col text-foreground"
             data-slot="combobox-popup"
             {...props}>
             {children}
