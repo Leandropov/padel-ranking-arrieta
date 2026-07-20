@@ -164,7 +164,7 @@ export default function ResultadoPage() {
             <CircleCheckIcon className="size-7 text-success" />
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Resultado registrado!</CardTitle>
+            <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Resultado registrado!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -188,7 +188,7 @@ export default function ResultadoPage() {
             <ClipboardCheckIcon className="size-7 text-primary" />
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Revisa los datos antes de enviar</CardTitle>
+            <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Revisa los datos antes de enviar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label="Quién carga" valor={form.quienEres} />
@@ -250,7 +250,7 @@ export default function ResultadoPage() {
           <circle cx="340" cy="120" r="14" fill="none" stroke="#ffffff" strokeWidth="3" opacity="0.35" />
         </svg>
         <CardHeader className="text-center">
-          <CardTitle className="text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Anota el resultado de tu partido</CardTitle>
+          <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Anota el resultado de tu partido</CardTitle>
           <p className="text-base text-muted-foreground">Completa los datos del partido para actualizar el ranking.</p>
         </CardHeader>
         <CardContent className="space-y-4">

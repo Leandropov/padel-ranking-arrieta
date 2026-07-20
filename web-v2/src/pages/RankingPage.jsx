@@ -104,7 +104,7 @@ export default function RankingPage() {
         <CardHeader className="text-center">
           {/* Peso 700 con tracking apretado: la tipografía display pesada de
               Replicate (grotesca condensada), no la calma de Coinbase. */}
-          <CardTitle className="text-[36px] leading-[1.0] font-bold tracking-[-0.035em]">Ranking Oficial</CardTitle>
+          <CardTitle className="font-heading text-[36px] leading-[1.0] font-bold tracking-[-0.035em]">Ranking Oficial</CardTitle>
           <p className="text-base text-muted-foreground">Busca tu nombre y mira cómo cambiaste después del último partido.</p>
           <p className="text-sm text-muted-foreground/70">Última actualización: {formatearFechaLegible(data.actualizado)}</p>
         </CardHeader>
