@@ -10,8 +10,10 @@ const SHEET_JUGADORES = 'Jugadores';
 const SHEET_RANKING = 'Ranking';
 const SHEET_HISTORIAL = 'Historial';
 
-// Fila donde arranca el bloque de configuración dentro de "Categorías"
-// (debajo de la tabla de rangos). Ver Setup.js para el layout exacto.
+// Filas del bloque de configuración usadas SOLO por Setup.js para
+// escribir el layout inicial en una instalación nueva. La LECTURA en
+// getConfig_() ya no depende de estos números fijos: busca por etiqueta,
+// así reordenar la planilla no rompe nada. Ver Setup.js.
 const CONFIG_ROW_K = 9;
 const CONFIG_ROW_D = 10;
 const CONFIG_ROW_CANCHAS = 11;
@@ -83,29 +85,36 @@ function getCategoryRange_(nombreCategoria) {
 
 function getConfig_() {
   const sheet = getSpreadsheet_().getSheetByName(SHEET_CATEGORIAS);
-  // Una sola lectura agrupada (filas CONFIG_ROW_K..CONFIG_ROW_PIN_ADMIN,
-  // que son contiguas) en vez de una llamada a getValue() por cada dato
-  // -- son 8 ida-y-vuelta a Sheets menos por cada getConfig_().
-  const filaInicio = CONFIG_ROW_K;
-  const cantidadFilas = CONFIG_ROW_PIN_ADMIN - CONFIG_ROW_K + 1;
-  const valores = sheet
-    .getRange(filaInicio, 2, cantidadFilas, 1)
-    .getValues()
-    .map((r) => r[0]);
-  const val = (fila) => valores[fila - filaInicio];
+  // La config se lee por ETIQUETA (columna A), no por número de fila
+  // fijo: así el club puede insertar/mover filas dentro de la pestaña
+  // Categorías (p. ej. agregar el encabezado "Configuración" o una fila
+  // nueva) sin que el backend quede leyendo celdas equivocadas. Antes se
+  // leía por fila fija (CONFIG_ROW_*, que ahora solo usa Setup.js para el
+  // layout inicial) y reordenar la planilla lo rompía silenciosamente
+  // (canchas/horarios vacíos). Una sola lectura agrupada de A:B.
+  const filas = sheet.getRange(1, 1, sheet.getLastRow(), 2).getValues();
+  // Se busca la fila cuya etiqueta (col A) contiene la palabra clave y se
+  // toma su valor (col B). Las claves son fragmentos distintivos de cada
+  // etiqueta, elegidos para no chocar entre sí (p. ej. "separadas por
+  // coma" para Canchas, para no matchear "...bloque de cancha").
+  const buscar_ = (clave) => {
+    const c = clave.toLowerCase();
+    const fila = filas.find(([etiqueta]) => String(etiqueta).toLowerCase().includes(c));
+    return fila ? fila[1] : '';
+  };
 
-  const K = Number(val(CONFIG_ROW_K));
-  const D = Number(val(CONFIG_ROW_D));
-  const canchasRaw = String(val(CONFIG_ROW_CANCHAS) || '');
+  const K = Number(buscar_('puntos que mueve'));
+  const D = Number(buscar_('sensibilidad'));
+  const canchasRaw = String(buscar_('separadas por coma') || '');
   const canchas = canchasRaw
     .split(',')
     .map((c) => c.trim())
     .filter((c) => c.length > 0);
-  const apertura = String(val(CONFIG_ROW_APERTURA));
-  const cierre = String(val(CONFIG_ROW_CIERRE));
-  const duracionBloque = Number(val(CONFIG_ROW_DURACION_BLOQUE));
-  const ventanaDeteccion = Number(val(CONFIG_ROW_VENTANA_DETECCION));
-  const pinAdmin = String(val(CONFIG_ROW_PIN_ADMIN) || '');
+  const apertura = String(buscar_('apertura'));
+  const cierre = String(buscar_('cierre'));
+  const duracionBloque = Number(buscar_('cada bloque de cancha'));
+  const ventanaDeteccion = Number(buscar_('ventana'));
+  const pinAdmin = String(buscar_('pin de administración') || '');
   return { K, D, canchas, apertura, cierre, duracionBloque, ventanaDeteccion, pinAdmin };
 }
 
