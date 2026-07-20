@@ -387,12 +387,16 @@ export default function ResultadoPage() {
 
               <div className="space-y-1.5">
                 <Label>¿Qué equipo ganó?</Label>
+                {/* variant="default" + gap-2.5: dos píldoras SEPARADAS con
+                    espacio, en vez del control segmentado pegado (que con el
+                    radio pill quedaba como "cápsula torcida"). Cada ítem lleva
+                    su propio borde; seleccionado = inversión oscura. */}
                 <ToggleGroup
                   aria-label="Ganador"
-                  variant="outline"
+                  variant="default"
                   size="lg"
                   orientation="vertical"
-                  className="w-full"
+                  className="w-full gap-2.5"
                   value={[form.ganador]}
                   onValueChange={(vals) => vals.length && actualizar('ganador', vals[0])}
                 >
@@ -400,13 +404,13 @@ export default function ResultadoPage() {
                       pueden ser largos y el Toggle por defecto es nowrap */}
                   <ToggleGroupItem
                     value="A"
-                    className="h-auto min-h-10 w-full whitespace-normal py-2 data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background sm:min-h-9"
+                    className="h-auto min-h-11 w-full justify-start whitespace-normal border-input bg-card px-4 py-2.5 text-left data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background"
                   >
                     {labelEquipoA}
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="B"
-                    className="h-auto min-h-10 w-full whitespace-normal py-2 data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background sm:min-h-9"
+                    className="h-auto min-h-11 w-full justify-start whitespace-normal border-input bg-card px-4 py-2.5 text-left data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background"
                   >
                     {labelEquipoB}
                   </ToggleGroupItem>
