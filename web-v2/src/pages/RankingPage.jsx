@@ -36,10 +36,22 @@ export default function RankingPage() {
     return [{ valor: 'global', etiqueta: 'Global' }, ...categorias.map((c) => ({ valor: c, etiqueta: c }))];
   }, [data]);
 
-  // Coinbase es deliberadamente monocromático (un solo azul de marca,
-  // usado con moderación), así que las categorías se muestran como
-  // píldoras neutras grises con la etiqueta en mayúsculas -- no se
-  // codifican por color. La info va en el texto ("1ra"/"2da"/...).
+  // Coinbase de manual sería monocromático, pero acá codificamos las
+  // categorías por color a pedido. Se resuelve al estilo Coinbase: la
+  // píldora lleva un fondo tintado suave (color al 12%) con el texto en
+  // el color pleno, no un bloque saturado. La progresión va de un nivel
+  // a otro; si el club agrega más categorías que colores, repite el
+  // último. Se evita verde/rojo puros porque son los de la tendencia
+  // (▲/▼) y no deben confundirse.
+  const ESCALA_CATEGORIAS = ['#0052ff', '#7c3aed', '#d97706', '#db2777', '#0e9d8a', '#64748b'];
+  const coloresPorCategoria = useMemo(() => {
+    const categorias = data?.categorias || [];
+    const mapa = {};
+    categorias.forEach((c, i) => {
+      mapa[c] = ESCALA_CATEGORIAS[Math.min(i, ESCALA_CATEGORIAS.length - 1)];
+    });
+    return mapa;
+  }, [data]);
 
   if (estado === 'cargando') {
     return (
@@ -117,6 +129,7 @@ export default function RankingPage() {
                   jugadores={t.valor === 'global' ? data.jugadores : data.jugadores.filter((j) => j.categoria === t.valor)}
                   busqueda={busqueda}
                   mostrarCategoria={t.valor === 'global'}
+                  coloresPorCategoria={coloresPorCategoria}
                 />
               </TabsContent>
             ))}
@@ -127,7 +140,7 @@ export default function RankingPage() {
   );
 }
 
-function TablaCategoria({ jugadores, busqueda, mostrarCategoria }) {
+function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
   const filtrados = useMemo(() => {
     const conPosicion = jugadores.map((j, i) => ({ ...j, posicion: i + 1 }));
     const texto = busqueda.trim().toLowerCase();
@@ -163,7 +176,14 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria }) {
             <TableCell className="font-medium">{j.nombre}</TableCell>
             {mostrarCategoria && (
               <TableCell>
-                <Badge variant="secondary" className="text-xs uppercase tracking-wide">
+                <Badge
+                  variant="secondary"
+                  className="text-xs uppercase tracking-wide"
+                  style={{
+                    color: coloresPorCategoria[j.categoria],
+                    backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[j.categoria]} 12%, transparent)`,
+                  }}
+                >
                   {j.categoria}
                 </Badge>
               </TableCell>
