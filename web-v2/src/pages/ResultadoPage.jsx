@@ -160,11 +160,11 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#06231a]">
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#202020]">
             <CircleCheckIcon className="size-7 text-success" />
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-[34px] leading-[1.08] font-normal tracking-[-0.03em]">¡Resultado registrado!</CardTitle>
+            <CardTitle className="text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Resultado registrado!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -184,11 +184,11 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#0a0b0d]">
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#202020]">
             <ClipboardCheckIcon className="size-7 text-primary" />
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-[34px] leading-[1.08] font-normal tracking-[-0.03em]">Revisa los datos antes de enviar</CardTitle>
+            <CardTitle className="text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Revisa los datos antes de enviar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Fila label="Quién carga" valor={form.quienEres} />
@@ -236,14 +236,21 @@ export default function ResultadoPage() {
           preserveAspectRatio="xMidYMid slice"
           className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
         >
-          <rect width="460" height="175" fill="#0a0b0d" />
-          <circle cx="150" cy="90" r="34" className="fill-none stroke-primary" strokeWidth="4" />
-          <circle cx="150" cy="90" r="9" fill="#4d82ff" />
-          <circle cx="300" cy="60" r="22" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="4" />
-          <circle cx="340" cy="120" r="14" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="3" />
+          <defs>
+            <radialGradient id="revMeshForm" cx="30%" cy="22%" r="95%">
+              <stop offset="0%" stopColor="#ff6a3d" />
+              <stop offset="42%" stopColor="#ea2804" />
+              <stop offset="100%" stopColor="#c01f00" />
+            </radialGradient>
+          </defs>
+          <rect width="460" height="175" fill="url(#revMeshForm)" />
+          <circle cx="150" cy="90" r="34" fill="none" stroke="#ffffff" strokeWidth="4" opacity="0.9" />
+          <circle cx="150" cy="90" r="9" fill="#ffffff" />
+          <circle cx="300" cy="60" r="22" fill="none" stroke="#ffffff" strokeWidth="4" opacity="0.5" />
+          <circle cx="340" cy="120" r="14" fill="none" stroke="#ffffff" strokeWidth="3" opacity="0.35" />
         </svg>
         <CardHeader className="text-center">
-          <CardTitle className="text-[34px] leading-[1.08] font-normal tracking-[-0.03em]">Anota el resultado de tu partido</CardTitle>
+          <CardTitle className="text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Anota el resultado de tu partido</CardTitle>
           <p className="text-base text-muted-foreground">Completa los datos del partido para actualizar el ranking.</p>
         </CardHeader>
         <CardContent className="space-y-4">

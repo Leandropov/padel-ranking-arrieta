@@ -77,27 +77,34 @@ export default function RankingPage() {
   return (
     <div className="mx-auto max-w-2xl p-4">
       <Card>
-        {/* Cover oscuro (#0a0b0d) con la cancha en azul — guiño al "hero
-            oscuro" que es la seña de identidad más fuerte de Coinbase. */}
+        {/* Cover con degradé naranja radial (mesh #ff6a3d→#ea2804→#c01f00) y
+            la cancha en blanco — la firma visual más reconocible de Replicate. */}
         <svg
           aria-hidden="true"
           viewBox="0 0 640 210"
           preserveAspectRatio="xMidYMid slice"
           className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
         >
-          <rect width="640" height="210" fill="#0a0b0d" />
-          <g className="fill-none stroke-primary" strokeWidth="3">
+          <defs>
+            <radialGradient id="revMeshRank" cx="30%" cy="22%" r="95%">
+              <stop offset="0%" stopColor="#ff6a3d" />
+              <stop offset="42%" stopColor="#ea2804" />
+              <stop offset="100%" stopColor="#c01f00" />
+            </radialGradient>
+          </defs>
+          <rect width="640" height="210" fill="url(#revMeshRank)" />
+          <g stroke="#ffffff" strokeWidth="3" fill="none" opacity="0.85">
             <rect x="40" y="30" width="560" height="150" rx="14" />
             <line x1="320" y1="30" x2="320" y2="180" />
-            <line x1="150" y1="30" x2="150" y2="180" stroke="rgba(255,255,255,0.22)" />
-            <line x1="490" y1="30" x2="490" y2="180" stroke="rgba(255,255,255,0.22)" />
+            <line x1="150" y1="30" x2="150" y2="180" opacity="0.55" />
+            <line x1="490" y1="30" x2="490" y2="180" opacity="0.55" />
           </g>
-          <circle cx="320" cy="105" r="6" fill="#4d82ff" />
+          <circle cx="320" cy="105" r="6" fill="#ffffff" />
         </svg>
         <CardHeader className="text-center">
-          {/* Peso 400 (no bold) con tracking negativo: la firma tipográfica
-              de Coinbase — "banco calmo", no "fintech gritona". */}
-          <CardTitle className="text-[34px] leading-[1.08] font-normal tracking-[-0.03em]">Ranking Oficial</CardTitle>
+          {/* Peso 700 con tracking apretado: la tipografía display pesada de
+              Replicate (grotesca condensada), no la calma de Coinbase. */}
+          <CardTitle className="text-[36px] leading-[1.0] font-bold tracking-[-0.035em]">Ranking Oficial</CardTitle>
           <p className="text-base text-muted-foreground">Busca tu nombre y mira cómo cambiaste después del último partido.</p>
           <p className="text-sm text-muted-foreground/70">Última actualización: {formatearFechaLegible(data.actualizado)}</p>
         </CardHeader>

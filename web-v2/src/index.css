@@ -140,39 +140,40 @@
 }
 
 :root {
-    /* Coinbase-inspired token set — see ~/awesome-design-md/design-md/coinbase/DESIGN.md
-       Canvas blanco/gris suave, un único azul (#0052ff) de marca usado con
-       moderación, ink casi-negro, y verde/rojo de trading solo como texto. */
-    --destructive-foreground: #cf202f;
-    --info: #0052ff;
-    --info-foreground: #003ecc;
-    --success: #05b169;
-    --success-foreground: #05b169;
-    --warning: #f4b000;
-    --warning-foreground: #8a6100;
-    --accent: #eef0f3;
-    --accent-foreground: #0a0b0d;
+    /* Replicate-inspired token set — see ~/awesome-design-md/design-md/replicate/DESIGN.md
+       Canvas crema cálido (#f9f7f3, nunca blanco puro) con cards blancas,
+       naranja fuerte (#ea2804) usado como sello único, ink cálido #202020,
+       superficies bone, y todo lo interactivo tipo píldora. */
+    --destructive-foreground: #d14343;
+    --info: #575757;
+    --info-foreground: #202020;
+    --success: #2b9a66;
+    --success-foreground: #2b9a66;
+    --warning: #b8860b;
+    --warning-foreground: #7a5c00;
+    --accent: #f3f0e8;
+    --accent-foreground: #202020;
     --background: #ffffff;
-    --border: #dee1e6;
+    --border: rgba(32,32,32,0.12);
     --card: #ffffff;
-    --card-foreground: #0a0b0d;
-    --destructive: #cf202f;
-    --foreground: #0a0b0d;
-    --input: #dee1e6;
-    --muted: #f7f7f7;
-    --muted-foreground: #7c828a;
+    --card-foreground: #202020;
+    --destructive: #d14343;
+    --foreground: #202020;
+    --input: rgba(32,32,32,0.12);
+    --muted: #f9f7f3;
+    --muted-foreground: #646464;
     --popover: #ffffff;
-    --popover-foreground: #0a0b0d;
-    --primary: #0052ff;
+    --popover-foreground: #202020;
+    --primary: #ea2804;
     --primary-foreground: #ffffff;
-    --ring: #0052ff;
-    --secondary: #eef0f3;
-    --secondary-foreground: #0a0b0d;
-    --chart-1: #0052ff;
-    --chart-2: #05b169;
-    --chart-3: #cf202f;
-    --chart-4: #f4b000;
-    --chart-5: #7c828a;
+    --ring: #3b82f6;
+    --secondary: #f3f0e8;
+    --secondary-foreground: #202020;
+    --chart-1: #ea2804;
+    --chart-2: #2b9a66;
+    --chart-3: #d14343;
+    --chart-4: #b8860b;
+    --chart-5: #646464;
     --code: var(--color-white);
     --code-foreground: var(--foreground);
     --code-highlight: --alpha(var(--color-black) / 4%);
@@ -186,17 +187,16 @@
     --sidebar-primary-foreground: var(--color-neutral-50);
     --sidebar-ring: var(--color-neutral-400);
 
-    /* Radius scale Coinbase. Los componentes mapean así: inputs/selects/
-       combobox usan rounded-lg (=12px, Coinbase input md); cards usan
-       rounded-2xl (=24px, Coinbase card xl); alerts usan rounded-xl
-       (=16px). El botón es full-pill (100px) resuelto en button.jsx.
-       surface-strong para secundarios/badges: #eef0f3. */
-    --surface-strong: #eef0f3;
-    --radius-sm: 8px;
+    /* Radius scale Replicate. Todo lo interactivo (inputs/selects/toggles)
+       es píldora completa — resuelto directo en cada componente con
+       rounded-full. Cards usan rounded-2xl (=16px, Replicate card lg);
+       alerts rounded-xl (=16px); combobox chips rounded-3xl (=24px). */
+    --surface-strong: #f3f0e8;
+    --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 12px;
     --radius-xl: 16px;
-    --radius-2xl: 24px;
+    --radius-2xl: 16px;
     --radius-3xl: 24px;
     --radius-4xl: 28px;
 
