@@ -396,7 +396,7 @@ export default function ResultadoPage() {
                   variant="default"
                   size="lg"
                   orientation="vertical"
-                  className="w-full gap-2.5"
+                  className="w-full flex-col gap-2.5"
                   value={[form.ganador]}
                   onValueChange={(vals) => vals.length && actualizar('ganador', vals[0])}
                 >
