@@ -146,40 +146,41 @@
 }
 
 :root {
-    /* Replicate-inspired token set — see ~/awesome-design-md/design-md/replicate/DESIGN.md
-       Canvas crema cálido (#f9f7f3, nunca blanco puro) con cards blancas,
-       naranja fuerte (#ea2804) usado como sello único, ink cálido #202020,
-       superficies bone, y todo lo interactivo tipo píldora. */
-    --destructive-foreground: #d14343;
-    --info: #575757;
-    --info-foreground: #202020;
-    --success: #2b9a66;
-    --success-foreground: #2b9a66;
-    --warning: #b8860b;
+    /* Paleta verde-sobre-crema (extraída de una referencia de diseño).
+       Estructura/tipografías/forma píldora siguen siendo Replicate; solo
+       cambian los colores. Dos verdes: bosque oscuro #16432c (texto,
+       superficies) + lima brillante #83e17e (acción principal), sobre
+       crema #efece3. */
+    --destructive-foreground: #c1502f;
+    --info: #5c6b5d;
+    --info-foreground: #16432c;
+    --success: #2e9e5b;
+    --success-foreground: #2e9e5b;
+    --warning: #c98a1a;
     --warning-foreground: #7a5c00;
-    --accent: #f3f0e8;
-    --accent-foreground: #202020;
+    --accent: #d7e0d0;
+    --accent-foreground: #16432c;
     --background: #ffffff;
-    --border: rgba(32,32,32,0.12);
+    --border: rgba(22,67,44,0.14);
     --card: #ffffff;
-    --card-foreground: #202020;
-    --destructive: #d14343;
-    --foreground: #202020;
-    --input: rgba(32,32,32,0.12);
-    --muted: #f9f7f3;
-    --muted-foreground: #646464;
+    --card-foreground: #16432c;
+    --destructive: #c1502f;
+    --foreground: #16432c;
+    --input: rgba(22,67,44,0.14);
+    --muted: #efece3;
+    --muted-foreground: #5c6b5d;
     --popover: #ffffff;
-    --popover-foreground: #202020;
-    --primary: #ea2804;
-    --primary-foreground: #ffffff;
-    --ring: #3b82f6;
-    --secondary: #f3f0e8;
-    --secondary-foreground: #202020;
-    --chart-1: #ea2804;
-    --chart-2: #2b9a66;
-    --chart-3: #d14343;
-    --chart-4: #b8860b;
-    --chart-5: #646464;
+    --popover-foreground: #16432c;
+    --primary: #83e17e;
+    --primary-foreground: #0f3320;
+    --ring: #16432c;
+    --secondary: #d7e0d0;
+    --secondary-foreground: #16432c;
+    --chart-1: #83e17e;
+    --chart-2: #2e9e5b;
+    --chart-3: #c1502f;
+    --chart-4: #c98a1a;
+    --chart-5: #5c6b5d;
     --code: var(--color-white);
     --code-foreground: var(--foreground);
     --code-highlight: --alpha(var(--color-black) / 4%);
@@ -197,7 +198,7 @@
        es píldora completa — resuelto directo en cada componente con
        rounded-full. Cards usan rounded-2xl (=16px, Replicate card lg);
        alerts rounded-xl (=16px); combobox chips rounded-3xl (=24px). */
-    --surface-strong: #f3f0e8;
+    --surface-strong: #d7e0d0;
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 12px;

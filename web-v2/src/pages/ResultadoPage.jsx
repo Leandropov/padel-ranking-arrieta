@@ -160,8 +160,8 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#202020]">
-            <CircleCheckIcon className="size-7 text-success" />
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
+            <CircleCheckIcon className="size-7 text-primary" />
           </div>
           <CardHeader className="text-center">
             <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Resultado registrado!</CardTitle>
@@ -184,7 +184,7 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto max-w-md p-4">
         <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#202020]">
+          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
             <ClipboardCheckIcon className="size-7 text-primary" />
           </div>
           <CardHeader className="text-center">
@@ -236,18 +236,11 @@ export default function ResultadoPage() {
           preserveAspectRatio="xMidYMid slice"
           className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
         >
-          <defs>
-            <radialGradient id="revMeshForm" cx="30%" cy="22%" r="95%">
-              <stop offset="0%" stopColor="#ff6a3d" />
-              <stop offset="42%" stopColor="#ea2804" />
-              <stop offset="100%" stopColor="#c01f00" />
-            </radialGradient>
-          </defs>
-          <rect width="460" height="175" fill="url(#revMeshForm)" />
-          <circle cx="150" cy="90" r="34" fill="none" stroke="#ffffff" strokeWidth="4" opacity="0.9" />
-          <circle cx="150" cy="90" r="9" fill="#ffffff" />
-          <circle cx="300" cy="60" r="22" fill="none" stroke="#ffffff" strokeWidth="4" opacity="0.5" />
-          <circle cx="340" cy="120" r="14" fill="none" stroke="#ffffff" strokeWidth="3" opacity="0.35" />
+          <rect width="460" height="175" fill="#16432c" />
+          <circle cx="150" cy="90" r="34" fill="none" stroke="#83e17e" strokeWidth="4" />
+          <circle cx="150" cy="90" r="9" fill="#83e17e" />
+          <circle cx="300" cy="60" r="22" fill="none" stroke="#83e17e" strokeWidth="4" opacity="0.5" />
+          <circle cx="340" cy="120" r="14" fill="none" stroke="#83e17e" strokeWidth="3" opacity="0.32" />
         </svg>
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Anota el resultado de tu partido</CardTitle>

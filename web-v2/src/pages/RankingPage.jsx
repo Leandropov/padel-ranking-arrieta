@@ -77,29 +77,22 @@ export default function RankingPage() {
   return (
     <div className="mx-auto max-w-2xl p-4">
       <Card>
-        {/* Cover con degradé naranja radial (mesh #ff6a3d→#ea2804→#c01f00) y
-            la cancha en blanco — la firma visual más reconocible de Replicate. */}
+        {/* Cover verde bosque (#16432c) con la cancha en lima — el par
+            oscuro+lima de la referencia. */}
         <svg
           aria-hidden="true"
           viewBox="0 0 640 210"
           preserveAspectRatio="xMidYMid slice"
           className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
         >
-          <defs>
-            <radialGradient id="revMeshRank" cx="30%" cy="22%" r="95%">
-              <stop offset="0%" stopColor="#ff6a3d" />
-              <stop offset="42%" stopColor="#ea2804" />
-              <stop offset="100%" stopColor="#c01f00" />
-            </radialGradient>
-          </defs>
-          <rect width="640" height="210" fill="url(#revMeshRank)" />
-          <g stroke="#ffffff" strokeWidth="3" fill="none" opacity="0.85">
+          <rect width="640" height="210" fill="#16432c" />
+          <g stroke="#83e17e" strokeWidth="3" fill="none">
             <rect x="40" y="30" width="560" height="150" rx="14" />
             <line x1="320" y1="30" x2="320" y2="180" />
-            <line x1="150" y1="30" x2="150" y2="180" opacity="0.55" />
-            <line x1="490" y1="30" x2="490" y2="180" opacity="0.55" />
+            <line x1="150" y1="30" x2="150" y2="180" opacity="0.5" />
+            <line x1="490" y1="30" x2="490" y2="180" opacity="0.5" />
           </g>
-          <circle cx="320" cy="105" r="6" fill="#ffffff" />
+          <circle cx="320" cy="105" r="6" fill="#83e17e" />
         </svg>
         <CardHeader className="text-center">
           {/* Peso 700 con tracking apretado: la tipografía display pesada de
