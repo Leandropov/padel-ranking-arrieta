@@ -13,6 +13,25 @@ function redondear1_(n) {
   return Math.round(n * 10) / 10;
 }
 
+// Forma corta de la categoría para las tags del ranking: el backend
+// devuelve el nombre completo ("Tercera") y acá lo mostramos como "3ra".
+// Si aparece una categoría no mapeada, se muestra tal cual.
+const ABREV_CATEGORIA = {
+  primera: '1ra',
+  segunda: '2da',
+  tercera: '3ra',
+  cuarta: '4ta',
+  quinta: '5ta',
+  sexta: '6ta',
+  séptima: '7ma',
+  septima: '7ma',
+  octava: '8va',
+  novena: '9na',
+};
+function abreviarCategoria_(nombre) {
+  return ABREV_CATEGORIA[String(nombre).trim().toLowerCase()] || nombre;
+}
+
 export default function RankingPage() {
   const [estado, setEstado] = useState('cargando'); // cargando | listo | error
   const [data, setData] = useState(null);
@@ -178,13 +197,13 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
               <TableCell>
                 <Badge
                   variant="secondary"
-                  className="text-xs uppercase tracking-wide"
+                  className="text-xs tracking-wide"
                   style={{
                     color: coloresPorCategoria[j.categoria],
                     backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[j.categoria]} 12%, transparent)`,
                   }}
                 >
-                  {j.categoria}
+                  #{abreviarCategoria_(j.categoria)}
                 </Badge>
               </TableCell>
             )}
