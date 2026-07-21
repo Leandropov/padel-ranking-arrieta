@@ -17,9 +17,9 @@ function redondear1_(n) {
 // devuelve el nombre completo ("Tercera") y acá lo mostramos como "3ra".
 // Si aparece una categoría no mapeada, se muestra tal cual.
 const ABREV_CATEGORIA = {
-  primera: '1ra',
+  primera: '1era',
   segunda: '2da',
-  tercera: '3ra',
+  tercera: '3era',
   cuarta: '4ta',
   quinta: '5ta',
   sexta: '6ta',
@@ -203,7 +203,7 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
                     backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[j.categoria]} 12%, transparent)`,
                   }}
                 >
-                  #{abreviarCategoria_(j.categoria)}
+                  {abreviarCategoria_(j.categoria)}
                 </Badge>
               </TableCell>
             )}
