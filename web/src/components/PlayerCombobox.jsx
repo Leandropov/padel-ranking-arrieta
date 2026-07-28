@@ -95,7 +95,16 @@ export function PlayerCombobox({
           </ComboboxValue>
         </ComboboxChips>
         <ComboboxPopup>
-          <ComboboxEmpty>No encontramos a nadie con ese nombre</ComboboxEmpty>
+          {/* Este punto muerto es lo único que tienen cuatro personas
+              paradas en el club cuando falta uno de los que jugó, así que
+              tiene que resolver el caso entero, no sólo avisar que no hay
+              resultados. Las dos salidas son las únicas posibles: o es
+              socio y se registra, o es invitado y el partido no cuenta. */}
+          <ComboboxEmpty className="text-left">
+            <p className="font-medium text-foreground">Solo aparecen los jugadores ya registrados.</p>
+            <p className="mt-1 text-sm">Si es socio, tiene que registrarse antes de que puedas cargar el partido.</p>
+            <p className="text-sm">Si es invitado, este partido no suma al ranking.</p>
+          </ComboboxEmpty>
           <ComboboxList>
             {(item) => (
               <ComboboxItem key={item.value} value={item}>
@@ -117,7 +126,12 @@ export function PlayerCombobox({
     >
       <ComboboxInput placeholder={placeholder} size="lg" />
       <ComboboxPopup>
-        <ComboboxEmpty>Sin resultados</ComboboxEmpty>
+        {/* Acá quien busca se busca a sí mismo, así que la salida es una
+            sola: registrarse. */}
+        <ComboboxEmpty className="text-left">
+          <p className="font-medium text-foreground">Solo aparecen los jugadores ya registrados.</p>
+          <p className="mt-1 text-sm">Si todavía no estás en el ranking, regístrate primero.</p>
+        </ComboboxEmpty>
         <ComboboxList>
           {(item) => (
             <ComboboxItem key={item.value} value={item}>
