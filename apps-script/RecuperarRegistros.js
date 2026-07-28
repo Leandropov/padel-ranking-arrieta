@@ -1,28 +1,25 @@
 /**
  * RecuperarRegistros.js
- * Utilidad de una sola vez: reprocesa las respuestas del formulario de
- * registro que no llegaron a "Jugadores" (por ejemplo, porque en su
- * momento la categoría no matcheaba -- ver normalizarNombreCategoria_
- * en Config.js). Correr recuperarRegistrosDelFormulario() a mano desde
- * el editor de Apps Script; no está atada a ningún trigger.
+ * Utilidad heredada: reprocesa respuestas del Google Form de registro
+ * VIEJO que nunca llegaron a "Jugadores" (pasó una vez, cuando la
+ * categoría abreviada del formulario no matcheaba contra la pestaña
+ * Categorías).
  *
- * Es seguro correrla varias veces: salta los nombres que ya están en
- * Jugadores, así que solo agrega lo que realmente falta.
+ * Ya casi no hace falta: el alta se hace desde la app y todo intento
+ * queda en la pestaña Registros. Se conserva solo por si quedaron
+ * respuestas viejas sin procesar en "Form Responses 1".
+ *
+ * Correr recuperarRegistrosDelFormulario() a mano desde el editor. Es
+ * seguro correrla varias veces: registrarJugador_ rechaza los nombres
+ * que ya están, así que solo agrega lo que realmente falta.
  */
 function recuperarRegistrosDelFormulario() {
   const ss = getSpreadsheet_();
   const respuestas = ss.getSheets().find((s) => s.getName().indexOf('Form Responses') === 0);
-  if (!respuestas) throw new Error('No se encontró la pestaña de respuestas del formulario.');
-
-  const jugadoresSheet = ss.getSheetByName(SHEET_JUGADORES);
-  const existentes = new Set(
-    jugadoresSheet.getLastRow() >= 2
-      ? jugadoresSheet
-          .getRange(2, 1, jugadoresSheet.getLastRow() - 1, 1)
-          .getValues()
-          .map((r) => String(r[0]).trim())
-      : []
-  );
+  if (!respuestas) {
+    Logger.log('No hay pestaña de respuestas del formulario. Nada que recuperar.');
+    return;
+  }
 
   const lastRow = respuestas.getLastRow();
   if (lastRow < 2) {
@@ -35,32 +32,20 @@ function recuperarRegistrosDelFormulario() {
   const saltados = [];
 
   filas.forEach(([, nombreRaw, categoriaRaw]) => {
-    const nombre = String(nombreRaw).trim();
-    if (!nombre || existentes.has(nombre)) return; // fila vacía o ya está en Jugadores
-
-    let rango;
+    const nombre = limpiarNombre_(nombreRaw);
+    if (!nombre) return;
     try {
-      rango = getCategoryRange_(categoriaRaw);
+      // Se delega en la misma función que usa la app: así el alta queda
+      // con ID, con su fórmula de puntaje y anotada en la bitácora.
+      // Antes esta función escribía las celdas por su cuenta, y desde la
+      // migración a IDs eso habría escrito el layout viejo (nombre en la
+      // columna A) encima del nuevo, corrompiendo la planilla.
+      const jugador = registrarJugador_({ nombre: nombre, categoria: categoriaRaw });
+      agregados++;
+      Logger.log('Recuperado: ' + jugador.id + ' ' + jugador.nombre);
     } catch (err) {
-      saltados.push(nombre + ' (categoría "' + categoriaRaw + '" no reconocida)');
-      return;
+      saltados.push(nombre + ' (' + err.message + ')');
     }
-
-    const puntajeInicial = Math.round((rango.min + rango.max) / 2);
-    const fila = jugadoresSheet.getLastRow() + 1;
-
-    jugadoresSheet.getRange(fila, 1, 1, 3).setValues([[nombre, rango.nombre, puntajeInicial]]);
-    jugadoresSheet
-      .getRange(fila, 4)
-      .setFormula(
-        '=C' + fila +
-          ' + SUMIF(Historial!E:E,A' + fila + ',Historial!K:K)' +
-          ' + SUMIF(Historial!F:F,A' + fila + ',Historial!K:K)' +
-          ' + SUMIF(Historial!G:G,A' + fila + ',Historial!L:L)' +
-          ' + SUMIF(Historial!H:H,A' + fila + ',Historial!L:L)'
-      );
-    existentes.add(nombre);
-    agregados++;
   });
 
   Logger.log(

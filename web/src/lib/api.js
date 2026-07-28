@@ -8,7 +8,15 @@ async function llamar(query, options) {
   const url = query ? API_URL + '?' + query : API_URL;
   const res = await fetch(url, options);
   const data = await res.json();
-  if (!data.ok) throw new Error(data.error);
+  if (!data.ok) {
+    // El backend puede marcar el error con un código (ver safeRun_ en
+    // WebApp.js). Se propaga como propiedad para que la pantalla pueda
+    // reaccionar distinto a un caso puntual -- hoy NOMBRE_DUPLICADO --
+    // sin comparar el texto del mensaje, que cambia.
+    const err = new Error(data.error);
+    if (data.codigo) err.codigo = data.codigo;
+    throw err;
+  }
   return data.data;
 }
 
@@ -26,4 +34,15 @@ export function getRanking() {
 // no sabe responder.
 export function submitResultado(payload) {
   return llamar(null, { method: 'POST', body: JSON.stringify(payload) });
+}
+
+/**
+ * Alta de un jugador. El backend rechaza los nombres ya tomados con
+ * codigo 'NOMBRE_DUPLICADO' -- ver registrarJugador_ en Jugadores.js.
+ */
+export function registrarJugador({ nombre, categoria }) {
+  return llamar(null, {
+    method: 'POST',
+    body: JSON.stringify({ tipo: 'registro', nombre, categoria }),
+  });
 }

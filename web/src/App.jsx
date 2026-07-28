@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import ResultadoPage from '@/pages/ResultadoPage';
 import RankingPage from '@/pages/RankingPage';
+import RegistroPage from '@/pages/RegistroPage';
+
+const VISTAS = {
+  '#ranking': 'ranking',
+  '#registro': 'registro',
+};
 
 function vistaActual() {
-  return window.location.hash === '#ranking' ? 'ranking' : 'resultado';
+  return VISTAS[window.location.hash] || 'resultado';
 }
 
 export default function App() {
@@ -23,7 +29,9 @@ export default function App() {
         className="fixed inset-0 -z-10 bg-cover bg-center"
         style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(/fondo-resultado.jpg)' }}
       />
-      {vista === 'ranking' ? <RankingPage /> : <ResultadoPage />}
+      {vista === 'ranking' && <RankingPage />}
+      {vista === 'registro' && <RegistroPage />}
+      {vista === 'resultado' && <ResultadoPage />}
     </>
   );
 }

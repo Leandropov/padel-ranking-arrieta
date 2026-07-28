@@ -12,22 +12,24 @@ function getRanking() {
   const rankingSheet = ss.getSheetByName(SHEET_RANKING);
   const historialSheet = ss.getSheetByName(SHEET_HISTORIAL);
 
+  // Ranking: A=ID, B=Nombre, C=Categoría declarada, D=Puntaje actual, E=Puesto.
   const lastRow = rankingSheet.getLastRow();
-  const filas = lastRow >= 2 ? rankingSheet.getRange(2, 1, lastRow - 1, 4).getValues() : [];
+  const filas = lastRow >= 2 ? rankingSheet.getRange(2, 1, lastRow - 1, 5).getValues() : [];
   const ultimoPorJugador = ultimoPartidoPorJugador_(historialSheet);
   const rangos = getCategoryRanges_();
 
-  const jugadores = filas
-    .filter((row) => row[0])
+  const base = filas
+    .filter((row) => row[0] && row[1])
     .map((row) => {
-      const [nombre, , puntajeRaw, puesto] = row;
+      const [id, nombre, , puntajeRaw, puesto] = row;
       const puntaje = Number(puntajeRaw);
-      const ultimo = ultimoPorJugador[nombre] || null;
+      const ultimo = ultimoPorJugador[String(id).trim()] || null;
       return {
         puesto: Number(puesto),
-        nombre: String(nombre),
+        id: String(id).trim(),
+        nombre: String(nombre).trim(),
         // La categoría se recalcula por puntaje actual, no por la que se
-        // declaró al registrarse (columna B de Jugadores) -- así alguien
+        // declaró al registrarse (columna C de Jugadores) -- así alguien
         // que subió o bajó de rango aparece solo en la pestaña que le
         // corresponde hoy, sin que nadie tenga que reasignarla a mano.
         categoria: categoriaPorPuntaje_(puntaje, rangos),
@@ -36,6 +38,10 @@ function getRanking() {
         fechaUltimoPartido: ultimo ? ultimo.fecha : null,
       };
     });
+
+  // La etiqueta desambigua con la categoría si dos jugadores comparten
+  // nombre exacto, para que la tabla nunca muestre dos filas idénticas.
+  const jugadores = agregarEtiquetas_(base);
 
   // El orden de las categorías sale de la pestaña Categorías (de menor a
   // mayor rango de puntos), no de en qué orden aparecen en el ranking --
@@ -65,6 +71,10 @@ function categoriaPorPuntaje_(puntaje, rangos) {
  * partido más reciente (por fecha del partido + hora fin, no por cuándo
  * se cargó el resultado -- una carga por administración de un partido
  * viejo no debe pisar la tendencia de un partido más nuevo real).
+ *
+ * El mapa está indexado por ID de jugador, no por nombre: si dos
+ * personas se llamaran igual, un mapa por nombre les mostraría a las
+ * dos la flecha del partido de una sola.
  */
 function ultimoPartidoPorJugador_(historialSheet) {
   const lastRow = historialSheet.getLastRow();
@@ -83,17 +93,21 @@ function ultimoPartidoPorJugador_(historialSheet) {
     const deltaA = Number(row[9]);
     const deltaB = Number(row[10]);
 
-    [row[3], row[4]].forEach((nombre) => registrarSiMasReciente_(mapa, nombre, clave, fecha, deltaA));
-    [row[5], row[6]].forEach((nombre) => registrarSiMasReciente_(mapa, nombre, clave, fecha, deltaB));
+    [row[3], row[4]].forEach((id) => registrarSiMasReciente_(mapa, id, clave, fecha, deltaA));
+    [row[5], row[6]].forEach((id) => registrarSiMasReciente_(mapa, id, clave, fecha, deltaB));
   });
 
   return mapa;
 }
 
-function registrarSiMasReciente_(mapa, nombre, clave, fecha, delta) {
-  if (!nombre) return;
-  const actual = mapa[nombre];
+function registrarSiMasReciente_(mapa, idRaw, clave, fecha, delta) {
+  // trim(): el ID viene de una celda y getRanking lo busca ya recortado.
+  // Un espacio de más en la planilla dejaría la flecha de tendencia en
+  // blanco sin ningún error visible.
+  const id = String(idRaw || '').trim();
+  if (!id) return;
+  const actual = mapa[id];
   if (!actual || clave > actual.clave) {
-    mapa[nombre] = { clave: clave, fecha: fecha, delta: delta };
+    mapa[id] = { clave: clave, fecha: fecha, delta: delta };
   }
 }

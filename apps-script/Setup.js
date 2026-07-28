@@ -18,21 +18,20 @@ function setupClub() {
   setupJugadores_(ss);
   setupRanking_(ss);
   setupHistorial_(ss);
+  setupRegistros_(ss);
 
   // La hoja "Hoja 1" que Sheets crea por defecto ya no hace falta.
   const hojaDefault = ss.getSheetByName('Hoja 1') || ss.getSheetByName('Sheet1');
   if (hojaDefault) ss.deleteSheet(hojaDefault);
 
-  const formUrl = setupFormularioRegistro_(ss);
-
   Logger.log('Planilla creada: ' + ss.getUrl());
-  Logger.log('Formulario de registro: ' + formUrl);
   Logger.log(
-    'Guardá estos dos links. El de la planilla es para el administrador, ' +
-      'el del formulario es para compartir con los jugadores nuevos.'
+    'Ya no se crea un Google Form de registro: los jugadores se dan de alta ' +
+      'desde la pantalla #registro de la app, que es la única que puede avisarle ' +
+      'a alguien en el momento que su nombre ya está tomado. Ver Jugadores.js.'
   );
   Logger.log(
-    'Paso pendiente manual: publicar la web app de resultado ' +
+    'Paso pendiente manual: publicar la web app ' +
       '(Implementar > Nueva implementación > Aplicación web). Ver README.'
   );
 }
@@ -82,29 +81,37 @@ function setupCategorias_(ss) {
 
 function setupJugadores_(ss) {
   const sheet = ss.insertSheet(SHEET_JUGADORES);
+  // El ID va primero y es la identidad real del jugador: el Historial
+  // guarda IDs, no nombres. Ver Jugadores.js para el porqué.
   sheet
-    .getRange('A1:D1')
-    .setValues([['Nombre completo', 'Categoría declarada', 'Puntaje inicial', 'Puntaje actual']])
+    .getRange('A1:E1')
+    .setValues([['ID', 'Nombre completo', 'Categoría declarada', 'Puntaje inicial', 'Puntaje actual']])
     .setFontWeight('bold');
   sheet.setFrozenRows(1);
-  sheet.autoResizeColumns(1, 4);
+  sheet.autoResizeColumns(1, 5);
 }
 
 function setupRanking_(ss) {
   const sheet = ss.insertSheet(SHEET_RANKING);
   sheet
-    .getRange('A1:D1')
-    .setValues([['Nombre completo', 'Categoría declarada', 'Puntaje actual', 'Puesto']])
+    .getRange('A1:E1')
+    .setValues([['ID', 'Nombre completo', 'Categoría declarada', 'Puntaje actual', 'Puesto']])
     .setFontWeight('bold');
   // Ranking 100% derivado de Jugadores, ordenado de mayor a menor puntaje.
   // Nadie debe escribir a mano en esta pestaña.
+  // select A,B,C,E = ID, Nombre, Categoría, Puntaje actual (se saltea el
+  // Puntaje inicial); se ordena por la 4a columna del resultado.
   sheet
     .getRange('A2')
     .setFormula(
-      '=IFERROR(SORT(QUERY(Jugadores!A2:D, "select A, B, D where A is not null", 0), 3, FALSE), "")'
+      '=IFERROR(SORT(QUERY(Jugadores!A2:E, "select A, B, C, E where A is not null", 0), 4, FALSE), "")'
     );
-  sheet.getRange('D2').setFormula('=ARRAYFORMULA(IF(A2:A="","",ROW(A2:A)-1))');
+  sheet.getRange('E2').setFormula('=ARRAYFORMULA(IF(A2:A="","",ROW(A2:A)-1))');
   sheet.setFrozenRows(1);
+}
+
+function setupRegistros_(ss) {
+  crearHojaRegistros_(ss);
 }
 
 function setupHistorial_(ss) {
@@ -138,38 +145,28 @@ function setupHistorial_(ss) {
   // hace hayDuplicado_ en WebApp.js.
   sheet.getRange('B2:B').setNumberFormat('@');
   sheet.getRange('D2:D').setNumberFormat('@');
+  // Columna de referencia para el humano: las E..H guardan IDs, que no
+  // se leen a ojo. La fórmula la escribe submitResultado fila por fila
+  // (no un ARRAYFORMULA sobre la columna entera, que inflaría
+  // getLastRow y rompería appendRow).
+  sheet.getRange(1, COL_HISTORIAL_NOMBRES).setValue('Jugadores (referencia)').setFontWeight('bold');
+  sheet.setColumnWidth(COL_HISTORIAL_NOMBRES, 320);
 }
 
-/**
- * Formulario de registro de jugador (una sola vez por persona).
- * Este SÍ es un Google Form nativo -- no necesita pantalla de confirmación
- * especial, y así el club lo puede administrar fácil desde Forms.
+/*
+ * Acá vivía setupFormularioRegistro_, que creaba el Google Form de alta
+ * de jugadores. Se eliminó: un Google Form no puede mirar la lista de
+ * jugadores mientras la persona escribe, así que no había forma de
+ * avisarle al segundo "Juan Pérez" que su nombre ya estaba tomado --
+ * justo en el único momento en que él es la única persona capaz de
+ * resolverlo. El alta ahora es la pantalla #registro de la app, que sí
+ * puede (ver registrarJugador_ en Jugadores.js).
+ *
+ * Beneficio de arrastre: se cayó la necesidad de normalizar categorías
+ * abreviadas ("4ta" -> "Cuarta"), porque la app ofrece exactamente los
+ * nombres de la pestaña Categorías. normalizarNombreCategoria_ sigue en
+ * Config.js por si quedan datos viejos, pero ya no la alimenta nadie.
+ *
+ * Si el formulario viejo todavía existe y alguien tiene el link, ver
+ * cerrarFormularioViejo_ en Migracion.js.
  */
-function setupFormularioRegistro_(ss) {
-  const form = FormApp.create('Registro de Jugador - Club de Pádel');
-  form.setDescription(
-    'Completá esto una sola vez para entrar al ranking. Tu puntaje inicial ' +
-      'se calcula automáticamente según la categoría que elijas.'
-  );
-
-  form
-    .addTextItem()
-    .setTitle('Nombre completo (agrega algo que te distinga: apellido materno, apodo, o número de jugador)')
-    .setRequired(true);
-
-  const categorias = getCategoryRanges_(); // ya está seteado SPREADSHEET_ID en script properties
-  form
-    .addListItem()
-    .setTitle('¿Qué categoría consideras tener?')
-    .setChoiceValues(categorias.map((c) => c.nombre))
-    .setRequired(true);
-
-  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
-
-  ScriptApp.newTrigger('onRegistroFormSubmit')
-    .forForm(form)
-    .onFormSubmit()
-    .create();
-
-  return form.getPublishedUrl();
-}

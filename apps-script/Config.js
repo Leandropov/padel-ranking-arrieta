@@ -9,6 +9,14 @@ const SHEET_CATEGORIAS = 'Categorías';
 const SHEET_JUGADORES = 'Jugadores';
 const SHEET_RANKING = 'Ranking';
 const SHEET_HISTORIAL = 'Historial';
+// Bitácora append-only de intentos de registro. Reemplaza el respaldo
+// que daba la pestaña de respuestas del Google Form. Ver Jugadores.js.
+const SHEET_REGISTROS = 'Registros';
+
+// Historial ocupa A..O (15 columnas de datos). La P es de solo lectura
+// para el humano que abre la planilla: traduce a nombres los IDs de las
+// columnas E..H. Ver formulaNombresHistorial_ en Jugadores.js.
+const COL_HISTORIAL_NOMBRES = 16;
 
 // Filas del bloque de configuración usadas SOLO por Setup.js para
 // escribir el layout inicial en una instalación nueva. La LECTURA en

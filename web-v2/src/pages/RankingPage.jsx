@@ -188,11 +188,13 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
       </TableHeader>
       <TableBody>
         {filtrados.map((j) => (
-          <TableRow key={j.nombre}>
+          // key por id y no por nombre: dos jugadores pueden llamarse
+          // igual, y con la key repetida React reusa mal las filas.
+          <TableRow key={j.id}>
             {/* Números en font-mono con tabular-nums: el aire de tablero
                 financiero preciso de Coinbase (CoinbaseMono). */}
             <TableCell className="text-right font-mono tabular-nums text-muted-foreground">{j.posicion}</TableCell>
-            <TableCell className="font-medium">{j.nombre}</TableCell>
+            <TableCell className="font-medium">{j.etiqueta}</TableCell>
             {mostrarCategoria && (
               <TableCell>
                 <Badge

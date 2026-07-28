@@ -1,10 +1,21 @@
 /**
  * RegistroTrigger.js
- * Se dispara solo cuando alguien completa el Formulario de Registro.
- * Calcula el puntaje inicial (punto medio del rango de la categoría
- * elegida) y agrega la fila a "Jugadores". El puntaje ACTUAL queda
- * como fórmula que suma los deltas de Historial, así nunca hay que
- * volver a tocarlo a mano.
+ * Adaptador del Google Form de registro VIEJO.
+ *
+ * El alta de jugadores ya no pasa por acá: se hace desde la pantalla
+ * #registro de la app (ver registrarJugador_ en Jugadores.js), que es la
+ * única que puede avisarle a alguien en el momento que su nombre ya está
+ * tomado. Pero el formulario viejo puede seguir existiendo y alguien
+ * puede tener el link guardado, así que este trigger se mantiene vivo y
+ * delega en la misma función que usa la app.
+ *
+ * Si se borrara este archivo dejando el trigger creado, los envíos del
+ * formulario fallarían en silencio: la respuesta quedaría en la pestaña
+ * de respuestas y la persona nunca entraría al ranking, sin que nadie se
+ * entere. Por eso se conserva.
+ *
+ * Para cerrar el formulario de una vez, ver cerrarFormularioViejo_ en
+ * Migracion.js.
  */
 function onRegistroFormSubmit(e) {
   // El trigger está atado al formulario (no a la hoja de respuestas), así
@@ -13,37 +24,25 @@ function onRegistroFormSubmit(e) {
   e.response.getItemResponses().forEach((r) => {
     mapa[r.getItem().getTitle()] = r.getResponse();
   });
-  const nombre = String(mapa['Nombre completo (agrega algo que te distinga: apellido materno, apodo, o número de jugador)']).trim();
-  const categoria = String(mapa['¿Qué categoría consideras tener?']).trim();
 
-  const rango = getCategoryRange_(categoria);
-  const puntajeInicial = Math.round((rango.min + rango.max) / 2);
+  // Se busca por fragmento del título y no por el título exacto: el
+  // texto de las preguntas del formulario cambió con el tiempo y un
+  // match exacto rompería el alta sin dejar rastro.
+  const valorDe_ = (fragmento) => {
+    const clave = Object.keys(mapa).find((t) => t.toLowerCase().indexOf(fragmento) !== -1);
+    return clave ? String(mapa[clave]) : '';
+  };
 
-  const ss = getSpreadsheet_();
-  const sheet = ss.getSheetByName(SHEET_JUGADORES);
+  const nombre = valorDe_('nombre');
+  const categoria = valorDe_('categor');
 
-  // Lock: si dos personas se registran casi al mismo tiempo, sin esto
-  // ambas ejecuciones pueden leer el mismo getLastRow() y la segunda
-  // pisa la fila de la primera.
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
   try {
-    const fila = sheet.getLastRow() + 1;
-
-    // rango.nombre (no el texto crudo del formulario): en Jugadores la
-    // categoría debe quedar exactamente como figura en Categorías, que
-    // es contra lo que la página de ranking arma sus tabs.
-    sheet.getRange(fila, 1, 1, 3).setValues([[nombre, rango.nombre, puntajeInicial]]);
-    sheet
-      .getRange(fila, 4)
-      .setFormula(
-        '=C' + fila +
-          ' + SUMIF(Historial!E:E,A' + fila + ',Historial!K:K)' +
-          ' + SUMIF(Historial!F:F,A' + fila + ',Historial!K:K)' +
-          ' + SUMIF(Historial!G:G,A' + fila + ',Historial!L:L)' +
-          ' + SUMIF(Historial!H:H,A' + fila + ',Historial!L:L)'
-      );
-  } finally {
-    lock.releaseLock();
+    const jugador = registrarJugador_({ nombre: nombre, categoria: categoria });
+    Logger.log('Alta desde el formulario viejo: ' + jugador.id + ' ' + jugador.nombre);
+  } catch (err) {
+    // registrarJugador_ ya dejó el intento en la pestaña Registros y, si
+    // fue por nombre repetido, ya avisó por mail. Acá no hay a quién
+    // mostrarle el error (el formulario ya cerró), así que solo se loguea.
+    Logger.log('Registro rechazado desde el formulario viejo ("' + nombre + '"): ' + err.message);
   }
 }

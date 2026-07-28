@@ -23,6 +23,15 @@
  * doGet() también sirve la página de ranking (?vista=ranking, ver
  * getRanking() en Ranking.js) -- mismo backend, misma implementación
  * de Apps Script, un solo query param decide qué devolver.
+ *
+ * doPost() rutea por payload.tipo: 'registro' da de alta un jugador
+ * (ver registrarJugador_ en Jugadores.js), y cualquier otra cosa se
+ * trata como la carga de un resultado. El default es el resultado a
+ * propósito: durante una ventana de despliegue puede quedar una versión
+ * vieja del frontend mandando resultados sin declarar el tipo.
+ *
+ * Ojo con los jugadores: desde la migración a IDs, el frontend manda y
+ * recibe IDs (J001...), nunca nombres. El nombre es solo para mostrar.
  */
 
 function doGet(e) {
@@ -35,17 +44,32 @@ function doPost(e) {
   return jsonOutput_(
     safeRun_(function () {
       const payload = JSON.parse(e.postData.contents);
+      if (payload && payload.tipo === 'registro') return registrarJugador_(payload);
       return submitResultado(payload);
     })
   );
 }
 
+/**
+ * `codigo` viaja aparte del mensaje para que el frontend pueda
+ * reaccionar distinto a un error puntual (hoy: NOMBRE_DUPLICADO, que
+ * amerita una pantalla propia) sin tener que comparar el texto del
+ * mensaje, que cambia.
+ */
 function safeRun_(fn) {
   try {
     return { ok: true, data: fn() };
   } catch (err) {
-    return { ok: false, error: err.message };
+    const salida = { ok: false, error: err.message };
+    if (err.codigo) salida.codigo = err.codigo;
+    return salida;
   }
+}
+
+function errorConCodigo_(codigo, mensaje) {
+  const err = new Error(mensaje);
+  err.codigo = codigo;
+  return err;
 }
 
 function jsonOutput_(obj) {
@@ -56,16 +80,20 @@ function hoyISO_() {
   return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 }
 
-function listarJugadores_() {
+/**
+ * Los jugadores tal como los necesita el frontend: el `id` es lo que
+ * viaja en el payload de un resultado, y la `etiqueta` es lo único que
+ * se le muestra a la persona. Se omite el puntaje a propósito -- la
+ * pantalla de carga de resultado no lo usa y no tiene por qué bajarlo.
+ */
+function listarJugadoresParaCliente_() {
   const sheet = getSpreadsheet_().getSheetByName(SHEET_JUGADORES);
-  const lastRow = sheet.getLastRow();
-  return lastRow >= 2
-    ? sheet
-        .getRange(2, 1, lastRow - 1, 1)
-        .getValues()
-        .map((r) => r[0])
-        .filter((n) => n)
-    : [];
+  return agregarEtiquetas_(leerJugadores_(sheet)).map((j) => ({
+    id: j.id,
+    nombre: j.nombre,
+    etiqueta: j.etiqueta,
+    categoria: j.categoria,
+  }));
 }
 
 /**
@@ -95,13 +123,17 @@ function getContext() {
   else if (bloque && candidatos.length > 1) modo = 'elegir';
 
   return {
-    jugadores: listarJugadores_(),
+    jugadores: listarJugadoresParaCliente_(),
     canchas: config.canchas,
     fecha: fecha,
     bloquesDelDia: getBloques_(config),
     modo: modo,
     bloque: bloque,
     candidatos: candidatos,
+    // Para la pantalla de registro: las categorías que el jugador puede
+    // declarar, y la lista de nombres ya tomados (va implícita en
+    // `jugadores`) contra la que avisa en vivo si el nombre se repite.
+    categorias: getCategoryRanges_().map((c) => c.nombre),
   };
 }
 
@@ -118,13 +150,20 @@ function submitResultado(payload) {
   const jugadoresSheet = ss.getSheetByName(SHEET_JUGADORES);
   const historialSheet = ss.getSheetByName(SHEET_HISTORIAL);
 
-  const mapaJugadores = leerJugadores_(jugadoresSheet);
+  // Indexado por ID: dos jugadores con el mismo nombre son dos entradas
+  // distintas. Antes esto era un mapa por nombre y el segundo pisaba al
+  // primero, así que el Elo se calculaba con el puntaje del equivocado
+  // y los deltas salían mal para los cuatro.
+  const mapaJugadores = leerJugadoresPorId_(jugadoresSheet);
 
   const [a1, a2] = payload.equipoA;
   const [b1, b2] = payload.equipoB;
-  [payload.quienEres, a1, a2, b1, b2].forEach((nombre) => {
-    if (!mapaJugadores[nombre]) {
-      throw new Error('"' + nombre + '" no está anotado en la lista de jugadores. Pídele que se registre primero.');
+  [payload.quienEres, a1, a2, b1, b2].forEach((id) => {
+    if (!mapaJugadores[id]) {
+      throw errorConCodigo_(
+        'JUGADOR_DESCONOCIDO',
+        'Uno de los jugadores del partido ya no figura en la lista. Recargá la página y probá de nuevo.'
+      );
     }
   });
 
@@ -164,12 +203,19 @@ function submitResultado(payload) {
       payload.cargaAdministracion ? 'Administración' : 'Jugador',
       payload.cargaAdministracion ? payload.motivo || '' : '',
     ]);
+    // Las columnas E..H y M guardan IDs, que no se pueden leer a ojo.
+    // Esta fórmula los traduce a nombres para quien abra la planilla; al
+    // ser fórmula y no texto, si alguien corrige un nombre en Jugadores
+    // el historial viejo también queda corregido.
+    historialSheet
+      .getRange(historialSheet.getLastRow(), COL_HISTORIAL_NOMBRES)
+      .setFormula(formulaNombresHistorial_(historialSheet.getLastRow()));
 
     return {
       deltaA: Math.round(deltaA * 10) / 10,
       deltaB: Math.round(deltaB * 10) / 10,
-      equipoA: [a1, a2],
-      equipoB: [b1, b2],
+      equipoA: [mapaJugadores[a1].nombre, mapaJugadores[a2].nombre],
+      equipoB: [mapaJugadores[b1].nombre, mapaJugadores[b2].nombre],
     };
   } finally {
     lock.releaseLock();
@@ -188,6 +234,9 @@ function validarPayload_(p, config) {
   if (p.fecha > hoyISO_()) throw new Error('La fecha del partido no puede ser futura.');
   if (!Array.isArray(p.equipoA) || p.equipoA.length !== 2) throw new Error('Elige exactamente 2 jugadores para el equipo A.');
   if (!Array.isArray(p.equipoB) || p.equipoB.length !== 2) throw new Error('Elige exactamente 2 jugadores para el equipo B.');
+  // Compara IDs, no nombres: dos personas distintas que se llaman igual
+  // tienen IDs distintos y pueden jugar el mismo partido. Cuando esto
+  // comparaba nombres, ese caso quedaba bloqueado con un mensaje falso.
   const todos = [...p.equipoA, ...p.equipoB];
   if (new Set(todos).size !== 4) throw new Error('Los 4 jugadores del partido deben ser distintos.');
   if (!p.cargaAdministracion && !todos.includes(p.quienEres)) {
@@ -221,18 +270,6 @@ function verificarPin_(pin, config) {
     throw new Error('PIN de administración incorrecto.');
   }
   cache.remove('pinAdminFallos');
-}
-
-function leerJugadores_(sheet) {
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return {};
-  const values = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
-  const mapa = {};
-  values.forEach((row) => {
-    const [nombre, , , puntaje] = row;
-    if (nombre) mapa[nombre] = { puntaje: Number(puntaje) };
-  });
-  return mapa;
 }
 
 /**

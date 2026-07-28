@@ -46,7 +46,10 @@ export default function ResultadoPage() {
   useEffect(() => {
     getContext()
       .then((data) => {
-        setCtx({ ...data, jugadores: [...data.jugadores].sort((a, b) => a.localeCompare(b, 'es')) });
+        setCtx({
+          ...data,
+          jugadores: [...data.jugadores].sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es')),
+        });
         setFecha(data.fecha);
         if (data.modo === 'auto') {
           const cancha = data.candidatos[0];
@@ -64,6 +67,19 @@ export default function ResultadoPage() {
 
   function actualizar(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }));
+  }
+
+  // El formulario guarda ids de jugador (dos personas pueden llamarse
+  // igual), pero en pantalla hay que mostrar nombres. `etiqueta` ya
+  // viene resuelta del backend: es el nombre, o el nombre más la
+  // categoría si hay otro jugador que se llama igual.
+  function etiquetaDe(id) {
+    const jugador = ctx?.jugadores.find((j) => j.id === id);
+    return jugador ? jugador.etiqueta : '';
+  }
+
+  function etiquetasDe(ids) {
+    return ids.map(etiquetaDe).join(' / ');
   }
 
   // Al elegir "quién eres" lo ubicamos solo en un equipo, para que no
@@ -191,12 +207,12 @@ export default function ResultadoPage() {
             <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Revisa los datos antes de enviar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Fila label="Quién carga" valor={form.quienEres} />
+            <Fila label="Quién carga" valor={etiquetaDe(form.quienEres)} />
             <Fila label="Cancha" valor={form.cancha} />
             <Fila label="Fecha" valor={fecha} />
             <Fila label="Hora" valor={form.hora} />
-            <Fila label="Equipo A" valor={form.equipoA.join(' / ')} />
-            <Fila label="Equipo B" valor={form.equipoB.join(' / ')} />
+            <Fila label="Equipo A" valor={etiquetasDe(form.equipoA)} />
+            <Fila label="Equipo B" valor={etiquetasDe(form.equipoB)} />
             <Fila label="Ganador" valor={'Equipo ' + form.ganador} />
             <Fila label="Resultado" valor={form.resultado} />
             {modoAdmin && <Fila label="Carga por administración" valor={form.motivo} />}
@@ -223,8 +239,8 @@ export default function ResultadoPage() {
 
   // paso === 'form'
   const modo = ctx.modo;
-  const labelEquipoA = form.equipoA.length === 2 ? form.equipoA.join(' / ') : 'Equipo A';
-  const labelEquipoB = form.equipoB.length === 2 ? form.equipoB.join(' / ') : 'Equipo B';
+  const labelEquipoA = form.equipoA.length === 2 ? etiquetasDe(form.equipoA) : 'Equipo A';
+  const labelEquipoB = form.equipoB.length === 2 ? etiquetasDe(form.equipoB) : 'Equipo B';
 
   return (
     <div className="relative min-h-svh">

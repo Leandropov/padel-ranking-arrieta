@@ -152,9 +152,11 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
       </TableHeader>
       <TableBody>
         {filtrados.map((j) => (
-          <TableRow key={j.nombre}>
+          // key por id y no por nombre: dos jugadores pueden llamarse
+          // igual, y con la key repetida React reusa mal las filas.
+          <TableRow key={j.id}>
             <TableCell className="text-muted-foreground">{j.posicion}</TableCell>
-            <TableCell className="font-medium">{j.nombre}</TableCell>
+            <TableCell className="font-medium">{j.etiqueta}</TableCell>
             {mostrarCategoria && (
               <TableCell>
                 <Badge

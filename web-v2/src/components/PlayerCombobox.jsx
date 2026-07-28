@@ -18,8 +18,11 @@ import {
  * permite hasta `max` jugadores con chips removibles (para un equipo);
  * sin multiple, un solo valor (para "¿Quién eres?").
  *
- * `exclude` son nombres que no deben aparecer como sugerencia (ej. los
- * ya elegidos en el equipo contrario).
+ * `players` son objetos {id, nombre, etiqueta}. Lo que entra y sale por
+ * `value`/`onChange`/`exclude` son SIEMPRE ids, nunca nombres: dos
+ * personas pueden llamarse igual y hay que poder elegir a una sola.
+ * `etiqueta` es lo único que se muestra -- normalmente el nombre, y el
+ * nombre más la categoría si justo hay otro jugador con el mismo nombre.
  */
 export function PlayerCombobox({
   players,
@@ -40,15 +43,27 @@ export function PlayerCombobox({
     [exclude, multiple, value]
   );
   const items = useMemo(
-    () => players.filter((n) => !excludeSet.has(n)).map((n) => ({ label: n, value: n })),
+    () =>
+      players
+        .filter((j) => !excludeSet.has(j.id))
+        .map((j) => ({ label: j.etiqueta, value: j.id })),
     [players, excludeSet]
   );
+  // Para reconstruir el item completo a partir de un id ya elegido: el
+  // componente necesita {label, value} y el formulario solo guarda ids.
+  const itemPorId = useMemo(() => {
+    const mapa = new Map();
+    players.forEach((j) => mapa.set(j.id, { label: j.etiqueta, value: j.id }));
+    return mapa;
+  }, [players]);
   // Solo se usa en el combobox multiple: cierra el popup solo al llegar
   // al máximo de jugadores, para no obligar a un clic extra afuera.
   const [open, setOpen] = useState(false);
 
   if (multiple) {
-    const values = (value || []).map((n) => ({ label: n, value: n }));
+    const values = (value || [])
+      .map((id) => itemPorId.get(id))
+      .filter(Boolean);
     return (
       <Combobox
         items={items}
@@ -93,7 +108,7 @@ export function PlayerCombobox({
     );
   }
 
-  const selected = value ? { label: value, value } : null;
+  const selected = (value && itemPorId.get(value)) || null;
   return (
     <Combobox
       items={items}
