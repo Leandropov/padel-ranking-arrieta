@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowDownIcon, ArrowUpIcon, SearchIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, SearchIcon, XIcon } from 'lucide-react';
 
 function redondear1_(n) {
   return Math.round(n * 10) / 10;
@@ -127,9 +127,22 @@ export default function RankingPage() {
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar jugador…"
-              className="pl-8"
+              className="pl-8 pr-10"
               size="lg"
             />
+            {/* Borrar en un toque. A propósito NO devolvemos el foco al
+                input: en el celular el teclado tapaba media tabla, así que
+                al limpiar conviene que se cierre y se vea el ranking. */}
+            {busqueda && (
+              <button
+                type="button"
+                onClick={() => setBusqueda('')}
+                aria-label="Borrar búsqueda"
+                className="absolute top-1/2 right-1 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/24 focus-visible:outline-none"
+              >
+                <XIcon className="size-4" />
+              </button>
+            )}
           </div>
 
           <Tabs defaultValue="global">

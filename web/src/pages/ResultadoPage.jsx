@@ -184,8 +184,8 @@ export default function ResultadoPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <FilaDelta label={resultadoEnvio.equipoA.join(' / ')} delta={resultadoEnvio.deltaA} />
-              <FilaDelta label={resultadoEnvio.equipoB.join(' / ')} delta={resultadoEnvio.deltaB} />
+              <FilaDelta jugadores={resultadoEnvio.equipoA} delta={resultadoEnvio.deltaA} />
+              <FilaDelta jugadores={resultadoEnvio.equipoB} delta={resultadoEnvio.deltaB} />
             </div>
             <Button className="w-full" render={<a href="#ranking" />}>
               Ver ranking
@@ -211,8 +211,8 @@ export default function ResultadoPage() {
             <Fila label="Cancha" valor={form.cancha} />
             <Fila label="Fecha" valor={fecha} />
             <Fila label="Hora" valor={form.hora} />
-            <Fila label="Equipo A" valor={etiquetasDe(form.equipoA)} />
-            <Fila label="Equipo B" valor={etiquetasDe(form.equipoB)} />
+            <FilaEquipo label="Equipo A" jugadores={form.equipoA.map(etiquetaDe)} />
+            <FilaEquipo label="Equipo B" jugadores={form.equipoB.map(etiquetaDe)} />
             <Fila label="Ganador" valor={'Equipo ' + form.ganador} />
             <Fila label="Resultado" valor={form.resultado} />
             {modoAdmin && <Fila label="Carga por administración" valor={form.motivo} />}
@@ -471,20 +471,53 @@ export default function ResultadoPage() {
   );
 }
 
+// La etiqueta nunca se parte (`shrink-0`): sin eso, un valor largo la
+// comprimía y "Equipo A" caía en dos líneas. El valor se alinea a la
+// derecha para que, cuando entre en varias líneas, siga leyéndose como
+// una columna y no como texto suelto.
 function Fila({ label, valor }) {
   return (
-    <div className="flex justify-between border-b py-1.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <strong>{valor}</strong>
+    <div className="flex justify-between gap-4 border-b py-1.5 text-sm">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <strong className="min-w-0 text-right break-words">{valor}</strong>
     </div>
   );
 }
 
-function FilaDelta({ label, delta }) {
+// Los dos jugadores de un equipo van uno por línea en vez de unidos por
+// " / ": con nombres largos el separador quedaba en cualquier lado y un
+// nombre se cortaba al medio ("Leandro bravo" arriba, "(Leo)" abajo).
+// Siempre apilados, aunque entren en una línea, para que Equipo A y
+// Equipo B se lean igual.
+function FilaEquipo({ label, jugadores }) {
   return (
-    <div className="flex justify-between border-b py-1.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <strong className={delta > 0 ? 'text-success' : 'text-destructive'}>{fmtDelta(delta)}</strong>
+    <div className="flex justify-between gap-4 border-b py-1.5 text-sm">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <div className="min-w-0 text-right">
+        {jugadores.map((nombre, i) => (
+          <strong key={i} className="block break-words">
+            {nombre}
+          </strong>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Misma idea que FilaEquipo, pero acá los nombres son la etiqueta y el
+// puntaje el valor: el delta no se comprime nunca y queda centrado
+// contra el bloque de nombres.
+function FilaDelta({ jugadores, delta }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b py-1.5 text-sm">
+      <div className="min-w-0 text-muted-foreground">
+        {jugadores.map((nombre, i) => (
+          <span key={i} className="block break-words">
+            {nombre}
+          </span>
+        ))}
+      </div>
+      <strong className={'shrink-0 ' + (delta > 0 ? 'text-success' : 'text-destructive')}>{fmtDelta(delta)}</strong>
     </div>
   );
 }
