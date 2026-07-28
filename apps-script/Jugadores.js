@@ -178,13 +178,13 @@ function registrarJugador_(payload) {
   const categoriaRaw = String((payload && payload.categoria) || '').trim();
 
   if (nombre.length < 3) {
-    throw errorConCodigo_('NOMBRE_CORTO', 'Escribí tu nombre y apellido para entrar al ranking.');
+    throw errorConCodigo_('NOMBRE_CORTO', 'Escribe tu nombre y apellido para entrar al ranking.');
   }
   if (nombre.length > 60) {
     throw errorConCodigo_('NOMBRE_LARGO', 'El nombre es demasiado largo (máximo 60 caracteres).');
   }
   if (!categoriaRaw) {
-    throw errorConCodigo_('FALTA_CATEGORIA', 'Elegí la categoría que considerás tener.');
+    throw errorConCodigo_('FALTA_CATEGORIA', 'Elige la categoría que consideras tener.');
   }
   // Tira si la categoría no existe en la pestaña Categorías.
   const rango = getCategoryRange_(categoriaRaw);
@@ -209,9 +209,10 @@ function registrarJugador_(payload) {
       throw errorConCodigo_(
         'NOMBRE_DUPLICADO',
         'Ya hay un jugador registrado como "' + choque.nombre + '". ' +
-          'Si sos vos, ya estás en el ranking y no hace falta registrarse de nuevo. ' +
-          'Si sos otra persona con el mismo nombre, agregá algo que te distinga ' +
-          '(la inicial de tu apellido, un apodo) y probá de nuevo.'
+          'Si eres tú, ya estás en el ranking y no necesitas registrarte de nuevo. ' +
+          'Si eres otra persona con el mismo nombre, agrega algo que te distinga ' +
+          'al final de tu nombre, en el mismo campo (por ejemplo "' + choque.nombre +
+          ' M." o "' + choque.nombre + ' (Colo)").'
       );
     }
 
@@ -288,8 +289,8 @@ function avisarNombreRepetido_(nombreIntentado, existente) {
         'Ya hay un jugador con ese nombre: ' + existente.nombre + ' (' + existente.id + ', ' +
         existente.categoria + ').\n\n' +
         'El registro fue rechazado y se le pidió que agregue algo que lo distinga.\n\n' +
-        'Si son dos personas distintas y la segunda no vuelve a intentar, podés darla de alta ' +
-        'vos desde la pestaña Jugadores (poniéndole un ID nuevo) o pedirle que se registre con ' +
+        'Si son dos personas distintas y la segunda no vuelve a intentar, puedes darla de alta ' +
+        'desde la pestaña Jugadores (poniéndole un ID nuevo) o pedirle que se registre con ' +
         'un nombre distinguible.\n\n' +
         'Queda registrado en la pestaña "' + SHEET_REGISTROS + '" de la planilla.'
     );

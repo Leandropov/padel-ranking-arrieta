@@ -215,8 +215,8 @@ function cerrarFormularioViejo_(urlDeEdicion) {
   const form = FormApp.openByUrl(urlDeEdicion);
   form.setAcceptingResponses(false);
   form.setCustomClosedFormMessage(
-    'El registro se mudó a la app del ranking. Entrá desde el link o el QR del club y ' +
-      'tocá "Registrarme". Si ya estabas registrado, no tenés que hacer nada.'
+    'El registro se mudó a la app del ranking. Entra desde el link o el QR del club y ' +
+      'toca "Registrarme". Si ya estabas registrado, no tienes que hacer nada.'
   );
   Logger.log('Formulario cerrado: ' + form.getTitle());
 }

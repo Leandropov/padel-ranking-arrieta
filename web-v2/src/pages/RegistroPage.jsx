@@ -141,7 +141,7 @@ export default function RegistroPage() {
           <circle cx="340" cy="120" r="14" fill="none" stroke="#83e17e" strokeWidth="3" opacity="0.32" />
         </svg>
         <CardHeader className="text-center">
-          <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Registrate en el ranking</CardTitle>
+          <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Regístrate en el ranking</CardTitle>
           <p className="text-base text-muted-foreground">
             Se hace una sola vez. Tu puntaje inicial sale de la categoría que elijas.
           </p>
@@ -160,19 +160,29 @@ export default function RegistroPage() {
             {yaExiste && (
               <Alert variant="error">
                 <AlertDescription>
-                  Ya hay un jugador registrado como <strong>{yaExiste.nombre}</strong>.
-                  <br />
-                  Si sos vos, ya estás en el ranking y no hace falta que te registres de nuevo.
-                  <br />
-                  Si sos otra persona con el mismo nombre, agregá algo que te distinga —la inicial
-                  de tu apellido, un apodo— así el club puede diferenciarlos.
+                  <p>
+                    Ya hay un jugador registrado como <strong>{yaExiste.nombre}</strong>.
+                  </p>
+                  <p>
+                    <strong>¿Eres tú?</strong> Ya estás en el ranking, no necesitas
+                    registrarte de nuevo.
+                  </p>
+                  <p>
+                    <strong>¿Eres otra persona con el mismo nombre?</strong> Agrega algo que
+                    te distinga <strong>en este mismo campo, después de tu nombre</strong>.
+                    Por ejemplo:
+                  </p>
+                  <div className="flex flex-col gap-1 rounded-md bg-foreground/5 px-3 py-2 font-medium text-foreground">
+                    <span>{yaExiste.nombre} M.</span>
+                    <span>{yaExiste.nombre} (Colo)</span>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="categoria">¿Qué categoría considerás tener?</Label>
+            <Label htmlFor="categoria">¿Qué categoría consideras tener?</Label>
             <Select
               aria-label="Categoría"
               items={(ctx.categorias || []).map((c) => ({ label: c, value: c }))}
@@ -180,7 +190,7 @@ export default function RegistroPage() {
               onValueChange={setCategoria}
             >
               <SelectTrigger id="categoria" size="lg">
-                <SelectValue placeholder="Elegí tu categoría" />
+                <SelectValue placeholder="Elige tu categoría" />
               </SelectTrigger>
               <SelectPopup>
                 {(ctx.categorias || []).map((c) => (

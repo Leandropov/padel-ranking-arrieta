@@ -162,7 +162,7 @@ function submitResultado(payload) {
     if (!mapaJugadores[id]) {
       throw errorConCodigo_(
         'JUGADOR_DESCONOCIDO',
-        'Uno de los jugadores del partido ya no figura en la lista. Recargá la página y probá de nuevo.'
+        'Uno de los jugadores del partido ya no figura en la lista. Recarga la página e inténtalo de nuevo.'
       );
     }
   });
@@ -263,7 +263,7 @@ function verificarPin_(pin, config) {
   const cache = CacheService.getScriptCache();
   const intentosFallidos = Number(cache.get('pinAdminFallos') || 0);
   if (intentosFallidos >= 5) {
-    throw new Error('Demasiados intentos con PIN incorrecto. Probá de nuevo en 15 minutos.');
+    throw new Error('Demasiados intentos con PIN incorrecto. Inténtalo de nuevo en 15 minutos.');
   }
   if (String(pin || '').trim() !== String(config.pinAdmin).trim()) {
     cache.put('pinAdminFallos', String(intentosFallidos + 1), 900); // 15 min
