@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getContext, submitResultado } from '@/lib/api';
 import { PlayerCombobox } from '@/components/PlayerCombobox';
 import { ResultadoInput } from '@/components/ResultadoInput';
@@ -43,7 +43,8 @@ export default function ResultadoPage() {
   const [resultadoEnvio, setResultadoEnvio] = useState(null);
   const [bloqueElegido, setBloqueElegido] = useState(false);
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setErrorCarga(false);
     getContext()
       .then((data) => {
         setCtx({
@@ -64,6 +65,10 @@ export default function ResultadoPage() {
         setErrorCarga(true);
       });
   }, []);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   function actualizar(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -159,9 +164,16 @@ export default function ResultadoPage() {
     return (
       <div className="mx-auto flex min-h-svh max-w-md items-center justify-center p-4">
         {errorCarga ? (
-          <Alert variant="error">
-            <AlertDescription>No pudimos cargar los datos del partido. Intenta de nuevo en un momento.</AlertDescription>
-          </Alert>
+          <div className="w-full space-y-4">
+            <Alert variant="error">
+              <AlertDescription>
+                No pudimos cargar los datos del partido. Revisa tu conexión e inténtalo de nuevo.
+              </AlertDescription>
+            </Alert>
+            <Button variant="secondary" className="w-full" onClick={cargar}>
+              Reintentar
+            </Button>
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-3 text-foreground">
             <img src="/pelota-tenis.svg" alt="" className="size-6 animate-spin" />

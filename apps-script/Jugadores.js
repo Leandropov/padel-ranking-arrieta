@@ -230,6 +230,11 @@ function registrarJugador_(payload) {
 
     registrarEnLog_(ss, nombre, categoriaRaw, 'OK', id);
 
+    // Hay un jugador nuevo en el ranking, así que el cacheado quedó
+    // viejo. El flush primero: ver invalidarCacheRanking_ en Ranking.js.
+    SpreadsheetApp.flush();
+    invalidarCacheRanking_();
+
     return { id: id, nombre: nombre, categoria: rango.nombre, puntaje: puntajeInicial };
   } finally {
     lock.releaseLock();

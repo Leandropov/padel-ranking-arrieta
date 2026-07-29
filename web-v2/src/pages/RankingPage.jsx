@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -37,7 +38,8 @@ export default function RankingPage() {
   const [data, setData] = useState(null);
   const [busqueda, setBusqueda] = useState('');
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setEstado('cargando');
     getRanking()
       .then((d) => {
         setData(d);
@@ -48,6 +50,10 @@ export default function RankingPage() {
         setEstado('error');
       });
   }, []);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   const tabs = useMemo(() => {
     if (!data) return [];
@@ -85,10 +91,13 @@ export default function RankingPage() {
 
   if (estado === 'error') {
     return (
-      <div className="mx-auto max-w-2xl p-4">
+      <div className="mx-auto max-w-2xl space-y-4 p-4">
         <Alert variant="error">
-          <AlertDescription>No pudimos cargar el ranking. Intenta de nuevo en un momento.</AlertDescription>
+          <AlertDescription>No pudimos cargar el ranking. Revisa tu conexión e inténtalo de nuevo.</AlertDescription>
         </Alert>
+        <Button variant="secondary" className="w-full" onClick={cargar}>
+          Reintentar
+        </Button>
       </div>
     );
   }
