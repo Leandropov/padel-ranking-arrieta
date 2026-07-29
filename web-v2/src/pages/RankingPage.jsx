@@ -3,7 +3,7 @@ import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FlowShell } from '@/components/FlowShell';
-import { ESTILO_REFERENCIA, FILA_HORIZONTAL, SIN_FLECHA } from '@/lib/layout';
+import { ESTILO_REFERENCIA, FILA_HORIZONTAL } from '@/lib/layout';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -304,25 +304,39 @@ function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria 
         {jugador.posicion}
       </span>
       <p className="line-clamp-2 min-w-0 flex-1 font-medium break-words">{jugador.etiqueta}</p>
+      {/* Las tres columnas de la derecha llevan ancho fijo y el mismo gap.
+          Con los anchos justos --apenas más que su contenido-- la
+          separación visual entre número y número queda en ~14px, menos
+          que los 24px del padding de la pantalla: así el grupo se lee
+          como un bloque de datos y no como tres cosas suel­tas, y el
+          delta deja de tener ese hueco raro contra el puntaje. */}
       <div className="flex shrink-0 items-center gap-2">
-        {mostrarCategoria && (
-          <CategoriaBadge
-            categoria={jugador.categoria}
-            coloresPorCategoria={coloresPorCategoria}
-            className="px-1.5"
-          />
-        )}
+        {/* La píldora arranca desde la izquierda de su columna, no
+            pegada al puntaje: con ancho fijo todas las categorías
+            empiezan en la misma x y se leen como columna. El min-w deja
+            que crezca si alguna vez aparece una categoría sin abreviatura
+            mapeada (ahí se muestra el nombre completo). */}
+        <span className="flex min-w-11 shrink-0 justify-start">
+          {mostrarCategoria && (
+            <CategoriaBadge
+              categoria={jugador.categoria}
+              coloresPorCategoria={coloresPorCategoria}
+              className="px-1.5"
+            />
+          )}
+        </span>
         <span className="w-10 text-right font-mono text-sm font-semibold tabular-nums">
           {redondear1_(jugador.puntaje)}
         </span>
-        {/* ml-2 además del gap: el delta necesita más aire que el resto
-            del grupo, si no se lee pegado al puntaje como si fueran un
-            solo número. */}
-        <span className={'ml-2 text-right text-sm ' + (SIN_FLECHA ? 'w-10' : 'w-13')}>
+        {/* Sin flecha: el signo ya dice la dirección y el color lo
+            refuerza, así que la flecha era un tercer canal para el mismo
+            dato -- y encima caía justo en el hueco que separa el delta
+            del puntaje, haciendo que se leyeran como un solo número. */}
+        <span className="w-10 text-right text-sm">
           <Tendencia
             delta={jugador.deltaUltimoPartido}
             fecha={jugador.fechaUltimoPartido}
-            conFlecha={!SIN_FLECHA}
+            conFlecha={false}
           />
         </span>
       </div>
