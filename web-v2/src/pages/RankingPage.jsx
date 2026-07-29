@@ -295,11 +295,12 @@ function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria 
           más grande y se leía como si fuera de otra jerarquía; ahora los
           tres forman una sola banda de datos y el único que manda en la
           fila es el nombre. */}
-      {/* Jerarquía por peso y color, no por tamaño: puntaje semibold en
-          foreground (lo más pesado de la fila, es el dato sobre el que
-          está armado el ranking), puesto medium en foreground un escalón
-          abajo, y el delta se queda en peso regular porque es contexto
-          del último partido, no el dato principal. */}
+      {/* Jerarquía por peso, no por tamaño --los tres números comparten
+          text-sm--, y con solo dos pesos en juego para no multiplicar
+          variantes: puesto y puntaje en bold (los dos datos que se
+          buscan), nombre y delta en medium. El delta se queda abajo a
+          propósito: es contexto del último partido, no el dato
+          principal, y ya se distingue por color. */}
       <span className="w-5 shrink-0 text-right font-mono text-sm font-bold tabular-nums">
         {jugador.posicion}
       </span>
@@ -325,7 +326,7 @@ function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria 
             />
           )}
         </span>
-        <span className="w-10 text-right font-mono text-sm font-semibold tabular-nums">
+        <span className="w-10 text-right font-mono text-sm font-bold tabular-nums">
           {redondear1_(jugador.puntaje)}
         </span>
         {/* Sin flecha: el signo ya dice la dirección y el color lo
