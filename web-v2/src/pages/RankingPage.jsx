@@ -300,7 +300,7 @@ function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria 
           está armado el ranking), puesto medium en foreground un escalón
           abajo, y el delta se queda en peso regular porque es contexto
           del último partido, no el dato principal. */}
-      <span className="w-5 shrink-0 text-right font-mono text-sm font-medium tabular-nums">
+      <span className="w-5 shrink-0 text-right font-mono text-sm font-bold tabular-nums">
         {jugador.posicion}
       </span>
       <p className="line-clamp-2 min-w-0 flex-1 font-medium break-words">{jugador.etiqueta}</p>
