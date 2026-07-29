@@ -157,7 +157,7 @@ export default function RankingPage() {
             </div>
             {tabs.map((t) => (
               <TabsContent key={t.valor} value={t.valor}>
-                <TablaCategoria
+                <RankingCategoria
                   jugadores={t.valor === 'global' ? data.jugadores : data.jugadores.filter((j) => j.categoria === t.valor)}
                   busqueda={busqueda}
                   mostrarCategoria={t.valor === 'global'}
@@ -171,7 +171,19 @@ export default function RankingPage() {
   );
 }
 
-function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
+/**
+ * El ranking tiene cinco datos por jugador (puesto, nombre, categoría,
+ * puntaje y tendencia) y en un celular de 390px no entran en cinco
+ * columnas: la tabla terminaba con scroll horizontal y el puntaje --que
+ * es el dato que la gente viene a buscar-- quedaba cortado fuera de
+ * pantalla.
+ *
+ * Así que en celular no es una tabla: es una lista donde cada jugador
+ * ocupa dos líneas (nombre + categoría a la izquierda, puntaje +
+ * tendencia a la derecha). De `sm` para arriba sigue siendo la tabla de
+ * siempre, que ahí entra sin problema.
+ */
+function RankingCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
   const filtrados = useMemo(() => {
     const conPosicion = jugadores.map((j, i) => ({ ...j, posicion: i + 1 }));
     const texto = busqueda.trim().toLowerCase();
@@ -187,6 +199,65 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
     return <p className="py-4 text-sm text-muted-foreground">No encontramos a nadie con ese nombre.</p>;
   }
 
+  return (
+    <>
+      <ul className="sm:hidden">
+        {filtrados.map((j) => (
+          <FilaJugador
+            key={j.id}
+            jugador={j}
+            mostrarCategoria={mostrarCategoria}
+            coloresPorCategoria={coloresPorCategoria}
+          />
+        ))}
+      </ul>
+      <div className="hidden sm:block">
+        <TablaCategoria
+          filtrados={filtrados}
+          mostrarCategoria={mostrarCategoria}
+          coloresPorCategoria={coloresPorCategoria}
+        />
+      </div>
+    </>
+  );
+}
+
+// Una fila de la lista de celular. El puesto va en una columna fija a la
+// izquierda para que los nombres arranquen todos alineados, y el bloque
+// de la derecha no se comprime nunca (`shrink-0`): si un nombre es largo
+// se parte él, no el puntaje.
+function FilaJugador({ jugador, mostrarCategoria, coloresPorCategoria }) {
+  return (
+    <li className="flex items-start gap-3 border-b py-3 last:border-b-0">
+      <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-sm tabular-nums text-muted-foreground">
+        {jugador.posicion}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-medium break-words">{jugador.etiqueta}</p>
+        {mostrarCategoria && (
+          <Badge
+            variant="secondary"
+            className="mt-1 text-xs tracking-wide"
+            style={{
+              color: coloresPorCategoria[jugador.categoria],
+              backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[jugador.categoria]} 12%, transparent)`,
+            }}
+          >
+            {abreviarCategoria_(jugador.categoria)}
+          </Badge>
+        )}
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="font-mono font-medium tabular-nums">{redondear1_(jugador.puntaje)}</p>
+        <div className="mt-1 text-sm">
+          <Tendencia delta={jugador.deltaUltimoPartido} fecha={jugador.fechaUltimoPartido} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function TablaCategoria({ filtrados, mostrarCategoria, coloresPorCategoria }) {
   return (
     <Table>
       <TableHeader>
