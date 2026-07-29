@@ -36,7 +36,7 @@
 
 function doGet(e) {
   const vista = e && e.parameter && e.parameter.vista;
-  if (vista === 'ranking') return jsonOutput_(safeRun_(getRanking));
+  if (vista === 'ranking') return jsonOutput_(safeRun_(getRankingCacheado_));
   return jsonOutput_(safeRun_(getContext));
 }
 
@@ -210,6 +210,12 @@ function submitResultado(payload) {
     historialSheet
       .getRange(historialSheet.getLastRow(), COL_HISTORIAL_NOMBRES)
       .setFormula(formulaNombresHistorial_(historialSheet.getLastRow()));
+
+    // Este partido acaba de mover los puntajes, así que el ranking
+    // cacheado quedó viejo. El flush primero: ver invalidarCacheRanking_
+    // en Ranking.js para por qué importa el orden.
+    SpreadsheetApp.flush();
+    invalidarCacheRanking_();
 
     return {
       deltaA: Math.round(deltaA * 10) / 10,

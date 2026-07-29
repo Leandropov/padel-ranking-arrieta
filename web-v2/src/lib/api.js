@@ -4,10 +4,52 @@
 export const API_URL =
   'https://script.google.com/macros/s/AKfycbyIWdxh5iUBrjFclCeMZdfyl1N5HvK2MgOkioVpAjNmTwih4XzFa3NcSwQcL7PY7IC3/exec';
 
-async function llamar(query, options) {
-  const url = query ? API_URL + '?' + query : API_URL;
-  const res = await fetch(url, options);
-  const data = await res.json();
+// Apps Script responde en 2-3 segundos cuando está sano, pero puede
+// dejar de responder sin cerrar la conexión: el 29/07/2026 estuvo unos
+// diez minutos redirigiendo a una respuesta que nunca llegaba. Sin
+// timeout, `fetch` espera indefinidamente y la pantalla se queda en
+// "cargando" para siempre, sin explicación y sin forma de reintentar.
+// 12s es cuatro veces el tiempo normal.
+const TIMEOUT_MS = 12000;
+
+/**
+ * Mensaje único para todo lo que signifique "el backend no contestó como
+ * debía": timeout, error de red, o una respuesta que no es el JSON
+ * esperado (cuando Apps Script falla devuelve su propia página HTML).
+ * Para quien está usando la app los tres son el mismo problema y la
+ * misma acción posible: reintentar.
+ */
+function errorDeBackend_() {
+  const err = new Error('No pudimos contactar al servidor. Revisa tu conexión e inténtalo de nuevo.');
+  err.codigo = 'BACKEND_NO_DISPONIBLE';
+  return err;
+}
+
+async function unIntento_(url, options) {
+  const controlador = new AbortController();
+  const reloj = setTimeout(() => controlador.abort(), TIMEOUT_MS);
+
+  let texto;
+  try {
+    const res = await fetch(url, { ...options, signal: controlador.signal });
+    texto = await res.text();
+  } catch {
+    // Acá caen tanto el timeout (AbortError) como cualquier fallo de red.
+    throw errorDeBackend_();
+  } finally {
+    clearTimeout(reloj);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(texto);
+  } catch {
+    // No vino JSON. Antes esto explotaba como SyntaxError y el texto
+    // crudo del navegador ("Unexpected token '<'...") terminaba en
+    // pantalla en los flujos que muestran err.message.
+    throw errorDeBackend_();
+  }
+
   if (!data.ok) {
     // El backend puede marcar el error con un código (ver safeRun_ en
     // WebApp.js). Se propaga como propiedad para que la pantalla pueda
@@ -18,6 +60,23 @@ async function llamar(query, options) {
     throw err;
   }
   return data.data;
+}
+
+async function llamar(query, options) {
+  const url = query ? API_URL + '?' + query : API_URL;
+
+  // Un reintento, y solo para las lecturas. Los envíos no se reintentan
+  // a propósito: si el pedido llegó pero la respuesta se perdió, un
+  // segundo intento escribiría el resultado dos veces. No vale la pena
+  // arriesgar un partido duplicado en el ranking para ahorrarle un toque
+  // a alguien -- para eso está el botón de reintentar en pantalla.
+  const esLectura = !options;
+  try {
+    return await unIntento_(url, options);
+  } catch (err) {
+    if (!esLectura || err.codigo !== 'BACKEND_NO_DISPONIBLE') throw err;
+    return unIntento_(url, options);
+  }
 }
 
 export function getContext() {

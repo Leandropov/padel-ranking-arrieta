@@ -52,6 +52,61 @@ function getRanking() {
   return { jugadores: jugadores, categorias: categorias, actualizado: hoyISO_() };
 }
 
+// El ranking de un club cambia poco: solo cuando alguien carga un
+// resultado o se registra un jugador, y esos dos caminos borran el cache
+// explícitamente. Los 60 segundos son la red de seguridad para el caso
+// en que la planilla se edite por fuera de la app (a mano, por ejemplo).
+const CACHE_RANKING_CLAVE = 'ranking_v1';
+const CACHE_RANKING_SEGUNDOS = 60;
+
+/**
+ * getRanking() lee las hojas Ranking, Historial y Categorías enteras y
+ * tarda 2-3 segundos. Sin cache, cada jugador que abre la pantalla
+ * dispara esa lectura completa; y como la web app corre con la cuenta
+ * que la desplegó (executeAs USER_DEPLOYING en appsscript.json), todo el
+ * club consume la misma bolsa de cuota. Con varios abriendo el ranking a
+ * la vez --lo normal cuando termina una ronda-- eso es un pico de
+ * lecturas idénticas que devuelven exactamente lo mismo.
+ */
+function getRankingCacheado_() {
+  const cache = CacheService.getScriptCache();
+  const guardado = cache.get(CACHE_RANKING_CLAVE);
+  if (guardado) {
+    try {
+      return JSON.parse(guardado);
+    } catch (err) {
+      // Si lo guardado quedó ilegible se ignora y se recalcula: un
+      // problema del cache no puede hacer fallar el pedido.
+    }
+  }
+
+  const ranking = getRanking();
+  const serializado = JSON.stringify(ranking);
+  // CacheService rechaza valores de más de 100 KB. Con 16 jugadores esto
+  // pesa unos 3,5 KB, pero si el club creciera mucho conviene dejar de
+  // cachear antes que hacer fallar la respuesta.
+  if (serializado.length < 90000) {
+    cache.put(CACHE_RANKING_CLAVE, serializado, CACHE_RANKING_SEGUNDOS);
+  }
+  return ranking;
+}
+
+/**
+ * Hay que llamarla después de cada escritura que mueve el ranking. Sin
+ * esto, quien carga su resultado y toca "Ver ranking" podría ver hasta
+ * un minuto los puntajes viejos -- justo en el momento en que más le
+ * importa verlos actualizados.
+ *
+ * Ojo con el orden: el ranking se deriva por fórmulas (Historial ->
+ * Jugadores!E -> Ranking), así que primero hay que forzar que la
+ * escritura se aplique con SpreadsheetApp.flush() y recién después
+ * borrar el cache. Al revés, el próximo lector puede alcanzar a guardar
+ * los valores viejos por otro minuto.
+ */
+function invalidarCacheRanking_() {
+  CacheService.getScriptCache().remove(CACHE_RANKING_CLAVE);
+}
+
 /**
  * A qué categoría corresponde un puntaje, según los rangos de la
  * pestaña Categorías. Si el puntaje quedó fuera de todos los rangos

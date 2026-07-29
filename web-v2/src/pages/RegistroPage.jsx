@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getContext, registrarJugador } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,8 @@ export default function RegistroPage() {
   const [enviando, setEnviando] = useState(false);
   const [registrado, setRegistrado] = useState(null);
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setEstado('cargando');
     getContext()
       .then((data) => {
         setCtx(data);
@@ -50,6 +51,10 @@ export default function RegistroPage() {
         setEstado('error');
       });
   }, []);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   // Misma normalización que normalizarNombre_ en apps-script/Jugadores.js:
   // sin acentos, sin mayúsculas y sin espacios de más, para que "Juan
@@ -93,10 +98,13 @@ export default function RegistroPage() {
 
   if (estado === 'error') {
     return (
-      <div className="mx-auto max-w-md p-4">
+      <div className="mx-auto max-w-md space-y-4 p-4">
         <Alert variant="error">
-          <AlertDescription>No pudimos cargar el registro. Intenta de nuevo en un momento.</AlertDescription>
+          <AlertDescription>No pudimos cargar el registro. Revisa tu conexión e inténtalo de nuevo.</AlertDescription>
         </Alert>
+        <Button variant="secondary" className="w-full" onClick={cargar}>
+          Reintentar
+        </Button>
       </div>
     );
   }
