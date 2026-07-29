@@ -98,9 +98,20 @@ Dos trampas de ese comando, las dos verificadas a mano:
 `web/` es el frontend v1 y **ya no se usa**: quedó como referencia. Su
 proyecto de Vercel (`padel-ranking-arrieta`) sigue en línea en
 [padel-ranking-arrieta.vercel.app](https://padel-ranking-arrieta.vercel.app)
-y en `web-ashy-pi-16.vercel.app`, y **también está conectado a `main` con
-Root Directory `web`**, así que cada push republica las dos versiones.
-Mientras eso siga así, conviene no dejar `web/` a medio editar.
+y en `web-ashy-pi-16.vercel.app`, sirviendo el último build que se le
+hizo, para no romperle el link a nadie que lo tenga guardado.
+
+**Su auto-deploy está desconectado desde el 2026-07-29**, así que los
+pushes a `main` ya no lo republican y editar `web/` no manda nada a
+producción. El proyecto no se borró justamente para no matar esas dos
+URLs. Si algún día hiciera falta reconectarlo (no hay comando de CLI para
+esto, solo API):
+```
+POST https://api.vercel.com/v9/projects/prj_fkIs5E920hcnuX1uGwk0Wd3OmeeF/link?teamId=team_AsltlRnWVjqeyPBZJbDQvOfh
+{"type":"github","repo":"Leandropov/padel-ranking-arrieta"}
+```
+Conectar el repo por API **no dispara un build**: hay que provocarlo con
+un push.
 
 Ojo si se toca algo de `web/`: ese código **no** tiene el timeout de
 `llamar()` que sí tiene la v2, así que ante un backend colgado deja la
