@@ -19,3 +19,12 @@ export const SIN_CAJA = params.has('sincaja');
  * `?horizontal=1`.
  */
 export const FILA_HORIZONTAL = params.has('horizontal');
+
+/**
+ * Tercera prueba (`?ref=1`), sobre el listado de la referencia de
+ * leaderboard que trajo Leandro (solo el listado: el podio de los tres
+ * primeros queda afuera a propósito). Las filas no se separan con
+ * bordes sino con aire, el nombre manda y todo lo demás --puesto,
+ * categoría, puntaje, tendencia-- baja de peso a gris.
+ */
+export const ESTILO_REFERENCIA = params.has('ref');

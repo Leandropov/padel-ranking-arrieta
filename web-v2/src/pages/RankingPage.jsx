@@ -3,7 +3,7 @@ import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FlowShell } from '@/components/FlowShell';
-import { FILA_HORIZONTAL } from '@/lib/layout';
+import { ESTILO_REFERENCIA, FILA_HORIZONTAL } from '@/lib/layout';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -272,12 +272,54 @@ function FilaJugadorHorizontal({ jugador, mostrarCategoria, coloresPorCategoria 
   );
 }
 
+/**
+ * Variante sobre el listado de la referencia (`?ref=1`).
+ *
+ * La diferencia con la primera versión apilada no es la estructura --las
+ * dos ponen dos líneas a la izquierda y dos a la derecha-- sino el peso.
+ * Acá el nombre es lo único oscuro de la fila y todo lo demás baja a
+ * gris, incluido el puntaje. La lógica es que en una lista ordenada el
+ * puntaje ya no necesita gritar: el orden de las filas ES el ranking, y
+ * el número solo confirma. Así el ojo puede barrer nombres sin ruido,
+ * que es lo que hace alguien buscándose.
+ *
+ * Las filas se separan con aire en vez de bordes, también de la
+ * referencia: sin líneas, dos líneas de texto se leen naturalmente como
+ * un bloque y no hace falta dibujar dónde termina cada jugador.
+ */
+function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria }) {
+  return (
+    <li className="flex items-center gap-3 py-2.5">
+      <span className="w-5 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground/70">
+        {jugador.posicion}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 font-medium break-words">{jugador.etiqueta}</p>
+        {mostrarCategoria && (
+          <CategoriaBadge
+            categoria={jugador.categoria}
+            coloresPorCategoria={coloresPorCategoria}
+            className="mt-1"
+          />
+        )}
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="font-mono tabular-nums text-muted-foreground">{redondear1_(jugador.puntaje)}</p>
+        <div className="mt-0.5 text-sm">
+          <Tendencia delta={jugador.deltaUltimoPartido} fecha={jugador.fechaUltimoPartido} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
 // Una fila de la lista de celular. El puesto va en una columna fija a la
 // izquierda para que los nombres arranquen todos alineados, y el bloque
 // de la derecha no se comprime nunca (`shrink-0`): si un nombre es largo
 // se parte él, no el puntaje.
 function FilaJugador(props) {
   const { jugador, mostrarCategoria, coloresPorCategoria } = props;
+  if (ESTILO_REFERENCIA) return <FilaJugadorReferencia {...props} />;
   if (FILA_HORIZONTAL) return <FilaJugadorHorizontal {...props} />;
   return (
     <li className="flex items-start gap-3 border-b py-3 last:border-b-0">
