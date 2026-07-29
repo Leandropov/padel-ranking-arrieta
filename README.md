@@ -8,7 +8,7 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
 ## Qué se resolvió distinto al diseño original, y por qué
 
 - **El "formulario de resultado" (punto 3) es una web app aparte
-  (carpeta `web/`, React), no un Google Form ni una página nativa de
+  (carpeta `web-v2/`, React), no un Google Form ni una página nativa de
   Apps Script.** Google Forms no tiene una pantalla nativa de "revisá
   el resumen antes de enviar". Esta web app sí la tiene (paso
   Formulario → Confirmación → Enviado). Apps Script (`WebApp.js`) queda
@@ -66,21 +66,42 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
    → Nueva implementación**, tipo **Aplicación web**, ejecutar como
    "Yo", acceso "Cualquier usuario". Copiá el link (termina en `/exec`)
    — responde JSON, no lo abras esperando ver un formulario.
-8. Configurá y publicá el frontend: en `web/src/lib/api.js`, pegá ese
-   link en `API_URL`. Después `cd web && npm install && npm run build`
-   y publicá `web/dist` en el hosting que elijas. Ese link público es
+8. Configurá y publicá el frontend: en `web-v2/src/lib/api.js`, pegá ese
+   link en `API_URL`. Después `cd web-v2 && npm install && npm run build`
+   y publicá `web-v2/dist` en el hosting que elijas. Ese link público es
    el que se comparte con el club y el que se convierte en QR.
 
 **Este proyecto ya está publicado en Vercel**:
-[padel-ranking-arrieta.vercel.app](https://padel-ranking-arrieta.vercel.app).
-El proyecto de Vercel (`padel-ranking-arrieta`, team `little-busy`) está
-conectado al repo de GitHub con Root Directory `web`, así que cada push a
-`main` se publica solo — no hace falta correr ningún comando de deploy a
-mano. Para republicar manualmente igual (por ejemplo desde otra máquina
-sin esperar al push):
+[padel-ranking-arrieta-v2.vercel.app](https://padel-ranking-arrieta-v2.vercel.app).
+El proyecto de Vercel es `padel-ranking-arrieta-v2` (team `little-busy`),
+con Root Directory `web-v2`. Para publicar:
 ```
-cd web && npx vercel --prod
+# desde la RAÍZ del repo, no desde web-v2/
+VERCEL_ORG_ID=team_AsltlRnWVjqeyPBZJbDQvOfh \
+VERCEL_PROJECT_ID=prj_hKDtBch57dUGQ6Ke4zH5qIlXxSTf \
+  npx vercel --prod
 ```
+Dos trampas de ese comando, las dos verificadas a mano:
+
+- **Hay que correrlo desde la raíz del repo.** Si se corre desde
+  `web-v2/`, Vercel le suma el Root Directory del proyecto y termina
+  buscando `web-v2/web-v2`, que no existe.
+- **Hay que pasar el `VERCEL_PROJECT_ID`.** El `.vercel/` de la raíz
+  apunta al proyecto viejo (`padel-ranking-arrieta`, Root Directory
+  `web`), así que sin esas variables se publica la v1.
+
+### La carpeta `web/` es la versión anterior
+
+`web/` es el frontend v1 y **ya no se usa**: quedó como referencia. Su
+proyecto de Vercel (`padel-ranking-arrieta`) sigue en línea en
+[padel-ranking-arrieta.vercel.app](https://padel-ranking-arrieta.vercel.app)
+y en `web-ashy-pi-16.vercel.app`, y según el historial de este README se
+publica solo con cada push a `main`.
+
+Ojo si se toca algo de `web/`: ese código **no** tiene el timeout de
+`llamar()` que sí tiene la v2, así que ante un backend colgado deja la
+pantalla cargando para siempre. No se arregló porque la v1 está
+retirada.
 
 ### Actualizar el backend después de la instalación
 
