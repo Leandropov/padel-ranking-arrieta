@@ -36,3 +36,10 @@ export const ESTILO_REFERENCIA = params.has('ref');
  * 302 y se colgaba--. Solo existe en esta rama de pruebas.
  */
 export const MOCK = params.has('mock');
+
+/**
+ * `?sinflecha=1`: la tendencia queda solo con el signo y el color, sin
+ * la flecha. Es para probar si la flecha, que cae entre el puntaje y el
+ * delta, es lo que hace que los dos números se lean pegados.
+ */
+export const SIN_FLECHA = params.has('sinflecha');

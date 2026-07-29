@@ -3,7 +3,7 @@ import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FlowShell } from '@/components/FlowShell';
-import { ESTILO_REFERENCIA, FILA_HORIZONTAL } from '@/lib/layout';
+import { ESTILO_REFERENCIA, FILA_HORIZONTAL, SIN_FLECHA } from '@/lib/layout';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -289,25 +289,42 @@ function FilaJugadorHorizontal({ jugador, mostrarCategoria, coloresPorCategoria 
  */
 function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria }) {
   return (
-    <li className="flex items-center gap-3 py-2.5">
-      <span className="w-5 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground/70">
+    <li className="flex items-center gap-2 border-b py-3 last:border-b-0">
+      {/* Los tres números --puesto, puntaje y delta-- comparten tamaño
+          (text-sm), familia (mono) y tabular-nums. Antes el puntaje era
+          más grande y se leía como si fuera de otra jerarquía; ahora los
+          tres forman una sola banda de datos y el único que manda en la
+          fila es el nombre. */}
+      {/* Jerarquía por peso y color, no por tamaño: puntaje semibold en
+          foreground (lo más pesado de la fila, es el dato sobre el que
+          está armado el ranking), puesto medium en foreground un escalón
+          abajo, y el delta se queda en peso regular porque es contexto
+          del último partido, no el dato principal. */}
+      <span className="w-5 shrink-0 text-right font-mono text-sm font-medium tabular-nums">
         {jugador.posicion}
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 font-medium break-words">{jugador.etiqueta}</p>
+      <p className="line-clamp-2 min-w-0 flex-1 font-medium break-words">{jugador.etiqueta}</p>
+      <div className="flex shrink-0 items-center gap-2">
         {mostrarCategoria && (
           <CategoriaBadge
             categoria={jugador.categoria}
             coloresPorCategoria={coloresPorCategoria}
-            className="mt-1"
+            className="px-1.5"
           />
         )}
-      </div>
-      <div className="shrink-0 text-right">
-        <p className="font-mono tabular-nums text-muted-foreground">{redondear1_(jugador.puntaje)}</p>
-        <div className="mt-0.5 text-sm">
-          <Tendencia delta={jugador.deltaUltimoPartido} fecha={jugador.fechaUltimoPartido} />
-        </div>
+        <span className="w-10 text-right font-mono text-sm font-semibold tabular-nums">
+          {redondear1_(jugador.puntaje)}
+        </span>
+        {/* ml-2 además del gap: el delta necesita más aire que el resto
+            del grupo, si no se lee pegado al puntaje como si fueran un
+            solo número. */}
+        <span className={'ml-2 text-right text-sm ' + (SIN_FLECHA ? 'w-10' : 'w-13')}>
+          <Tendencia
+            delta={jugador.deltaUltimoPartido}
+            fecha={jugador.fechaUltimoPartido}
+            conFlecha={!SIN_FLECHA}
+          />
+        </span>
       </div>
     </li>
   );
@@ -395,7 +412,7 @@ function TablaCategoria({ filtrados, mostrarCategoria, coloresPorCategoria }) {
 // Tendencia al estilo Coinbase: solo color de texto verde/rojo con flecha,
 // SIN píldora de fondo (regla estricta del sistema: "color only, never
 // background fill"), y el número en mono.
-function Tendencia({ delta, fecha }) {
+function Tendencia({ delta, fecha, conFlecha = true }) {
   if (delta === null || delta === undefined) {
     return <span className="text-muted-foreground/60">—</span>;
   }
@@ -403,14 +420,14 @@ function Tendencia({ delta, fecha }) {
   if (delta > 0) {
     return (
       <span className="inline-flex items-center gap-0.5 font-mono tabular-nums font-medium text-success" title={titulo}>
-        <ArrowUpIcon className="size-3.5" /> +{delta}
+        {conFlecha && <ArrowUpIcon className="size-3.5" />} +{delta}
       </span>
     );
   }
   if (delta < 0) {
     return (
       <span className="inline-flex items-center gap-0.5 font-mono tabular-nums font-medium text-destructive" title={titulo}>
-        <ArrowDownIcon className="size-3.5" /> {delta}
+        {conFlecha && <ArrowDownIcon className="size-3.5" />} {delta}
       </span>
     );
   }
