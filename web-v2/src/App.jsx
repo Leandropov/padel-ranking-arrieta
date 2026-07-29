@@ -25,7 +25,11 @@ export default function App() {
 
   return (
     <>
-      <div className="fixed inset-0 -z-10 bg-muted" />
+      {/* En celular el fondo beige no se ve por ningún lado (la pantalla
+          la ocupa entera la superficie de la card), así que se pinta del
+          mismo color para que el rebote del scroll en iOS no muestre una
+          franja distinta. */}
+      <div className="fixed inset-0 -z-10 bg-muted max-sm:bg-card" />
       {vista === 'ranking' && <RankingPage />}
       {vista === 'registro' && <RegistroPage />}
       {vista === 'resultado' && <ResultadoPage />}

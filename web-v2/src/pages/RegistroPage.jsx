@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getContext, registrarJugador } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FlowShell } from '@/components/FlowShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -111,43 +112,40 @@ export default function RegistroPage() {
 
   if (registrado) {
     return (
-      <div className="mx-auto max-w-md p-4">
-        <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-            <CircleCheckIcon className="size-7 text-primary" />
-          </div>
-          <CardHeader className="text-center">
-            <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Listo, {registrado.nombre}!</CardTitle>
-            <p className="text-base text-muted-foreground">
-              Ya estás en el ranking, en {registrado.categoria}, con {registrado.puntaje} puntos.
-              Tu puntaje se va a mover solo a medida que cargues resultados.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button className="w-full" render={<a href="#ranking" />}>
-              Ver ranking
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <FlowShell>
+        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
+          <CircleCheckIcon className="size-7 text-primary" />
+        </div>
+        <CardHeader className="text-center">
+          <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Listo, {registrado.nombre}!</CardTitle>
+          <p className="text-base text-muted-foreground">
+            Ya estás en el ranking, en {registrado.categoria}, con {registrado.puntaje} puntos.
+            Tu puntaje se va a mover solo a medida que cargues resultados.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button className="w-full" render={<a href="#ranking" />}>
+            Ver ranking
+          </Button>
+        </CardContent>
+      </FlowShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md p-4">
-      <Card>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 460 175"
-          preserveAspectRatio="xMidYMid slice"
-          className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
-        >
-          <rect width="460" height="175" fill="#16432c" />
-          <circle cx="150" cy="90" r="34" fill="none" stroke="#83e17e" strokeWidth="4" />
-          <circle cx="150" cy="90" r="9" fill="#83e17e" />
-          <circle cx="300" cy="60" r="22" fill="none" stroke="#83e17e" strokeWidth="4" opacity="0.5" />
-          <circle cx="340" cy="120" r="14" fill="none" stroke="#83e17e" strokeWidth="3" opacity="0.32" />
-        </svg>
+    <FlowShell>
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 460 175"
+        preserveAspectRatio="xMidYMid slice"
+        className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
+      >
+        <rect width="460" height="175" fill="#16432c" />
+        <circle cx="150" cy="90" r="34" fill="none" stroke="#83e17e" strokeWidth="4" />
+        <circle cx="150" cy="90" r="9" fill="#83e17e" />
+        <circle cx="300" cy="60" r="22" fill="none" stroke="#83e17e" strokeWidth="4" opacity="0.5" />
+        <circle cx="340" cy="120" r="14" fill="none" stroke="#83e17e" strokeWidth="3" opacity="0.32" />
+      </svg>
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Regístrate en el ranking</CardTitle>
           <p className="text-base text-muted-foreground">
@@ -220,7 +218,6 @@ export default function RegistroPage() {
             {enviando ? 'Registrando…' : 'Registrarme'}
           </Button>
         </CardContent>
-      </Card>
-    </div>
+    </FlowShell>
   );
 }

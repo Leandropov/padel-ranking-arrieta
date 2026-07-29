@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FlowShell } from '@/components/FlowShell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,8 +104,7 @@ export default function RankingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-4">
-      <Card>
+    <FlowShell ancho="2xl">
         {/* Cover verde bosque (#16432c) con la cancha en lima — el par
             oscuro+lima de la referencia. */}
         <svg
@@ -166,7 +166,7 @@ export default function RankingPage() {
             </div>
             {tabs.map((t) => (
               <TabsContent key={t.valor} value={t.valor}>
-                <TablaCategoria
+                <RankingCategoria
                   jugadores={t.valor === 'global' ? data.jugadores : data.jugadores.filter((j) => j.categoria === t.valor)}
                   busqueda={busqueda}
                   mostrarCategoria={t.valor === 'global'}
@@ -176,12 +176,23 @@ export default function RankingPage() {
             ))}
           </Tabs>
         </CardContent>
-      </Card>
-    </div>
+    </FlowShell>
   );
 }
 
-function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
+/**
+ * El ranking tiene cinco datos por jugador (puesto, nombre, categoría,
+ * puntaje y tendencia) y en un celular de 390px no entran en cinco
+ * columnas: la tabla terminaba con scroll horizontal y el puntaje --que
+ * es el dato que la gente viene a buscar-- quedaba cortado fuera de
+ * pantalla.
+ *
+ * Así que en celular no es una tabla sino una lista de filas, donde el
+ * nombre es lo único que puede partirse en dos líneas y el resto se
+ * ordena en columnas de ancho fijo a la derecha. De `sm` para arriba
+ * sigue siendo la tabla de siempre, que ahí entra sin problema.
+ */
+function RankingCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
   const filtrados = useMemo(() => {
     const conPosicion = jugadores.map((j, i) => ({ ...j, posicion: i + 1 }));
     const texto = busqueda.trim().toLowerCase();
@@ -197,6 +208,107 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
     return <p className="py-4 text-sm text-muted-foreground">No encontramos a nadie con ese nombre.</p>;
   }
 
+  return (
+    <>
+      <ul className="sm:hidden">
+        {filtrados.map((j) => (
+          <FilaJugador
+            key={j.id}
+            jugador={j}
+            mostrarCategoria={mostrarCategoria}
+            coloresPorCategoria={coloresPorCategoria}
+          />
+        ))}
+      </ul>
+      <div className="hidden sm:block">
+        <TablaCategoria
+          filtrados={filtrados}
+          mostrarCategoria={mostrarCategoria}
+          coloresPorCategoria={coloresPorCategoria}
+        />
+      </div>
+    </>
+  );
+}
+
+function CategoriaBadge({ categoria, coloresPorCategoria, className }) {
+  return (
+    <Badge
+      variant="secondary"
+      className={'text-xs tracking-wide ' + (className || '')}
+      style={{
+        color: coloresPorCategoria[categoria],
+        backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[categoria]} 12%, transparent)`,
+      }}
+    >
+      {abreviarCategoria_(categoria)}
+    </Badge>
+  );
+}
+
+/**
+ * Una fila del ranking en celular.
+ *
+ * Los cinco datos entran en un renglón. El nombre es el único elemento
+ * elástico --el único de largo impredecible-- y puede partirse en dos
+ * líneas; el `line-clamp-2` evita que un nombre disparatado genere una
+ * fila de tres.
+ *
+ * La jerarquía se resuelve sin tocar tamaños (los tres números comparten
+ * `text-sm`) y con solo dos pesos: bold para puesto y puntaje, que son
+ * los datos que la gente busca, y medium para nombre y delta. Cada dato
+ * se distingue por un canal distinto en vez de por acumulación: los
+ * números por peso, el delta por color, y el nombre por familia
+ * tipográfica (sans contra el mono de los números).
+ */
+function FilaJugador({ jugador, mostrarCategoria, coloresPorCategoria }) {
+  return (
+    <li className="flex items-center gap-2 border-b py-3 last:border-b-0">
+      <span className="w-5 shrink-0 text-right font-mono text-sm font-bold tabular-nums">
+        {jugador.posicion}
+      </span>
+      <p className="line-clamp-2 min-w-0 flex-1 font-medium break-words">{jugador.etiqueta}</p>
+      {/* Las tres columnas de la derecha llevan ancho fijo y el mismo gap.
+          Con los anchos justos --apenas más que su contenido-- la
+          separación visual entre número y número queda en ~14px, menos
+          que los 24px del padding de la pantalla: así el grupo se lee
+          como un bloque de datos y no como tres cosas suel­tas, y el
+          delta deja de tener ese hueco raro contra el puntaje. */}
+      <div className="flex shrink-0 items-center gap-2">
+        {/* La píldora arranca desde la izquierda de su columna, no
+            pegada al puntaje: con ancho fijo todas las categorías
+            empiezan en la misma x y se leen como columna. El min-w deja
+            que crezca si alguna vez aparece una categoría sin abreviatura
+            mapeada (ahí se muestra el nombre completo). */}
+        <span className="flex min-w-11 shrink-0 justify-start">
+          {mostrarCategoria && (
+            <CategoriaBadge
+              categoria={jugador.categoria}
+              coloresPorCategoria={coloresPorCategoria}
+              className="px-1.5"
+            />
+          )}
+        </span>
+        <span className="w-10 text-right font-mono text-sm font-bold tabular-nums">
+          {redondear1_(jugador.puntaje)}
+        </span>
+        {/* Sin flecha: el signo ya dice la dirección y el color lo
+            refuerza, así que la flecha era un tercer canal para el mismo
+            dato -- y encima caía justo en el hueco que separa el delta
+            del puntaje, haciendo que se leyeran como un solo número. */}
+        <span className="w-10 text-right text-sm">
+          <Tendencia
+            delta={jugador.deltaUltimoPartido}
+            fecha={jugador.fechaUltimoPartido}
+            conFlecha={false}
+          />
+        </span>
+      </div>
+    </li>
+  );
+}
+
+function TablaCategoria({ filtrados, mostrarCategoria, coloresPorCategoria }) {
   return (
     <Table>
       <TableHeader>
@@ -219,16 +331,7 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
             <TableCell className="font-medium">{j.etiqueta}</TableCell>
             {mostrarCategoria && (
               <TableCell>
-                <Badge
-                  variant="secondary"
-                  className="text-xs tracking-wide"
-                  style={{
-                    color: coloresPorCategoria[j.categoria],
-                    backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[j.categoria]} 12%, transparent)`,
-                  }}
-                >
-                  {abreviarCategoria_(j.categoria)}
-                </Badge>
+                <CategoriaBadge categoria={j.categoria} coloresPorCategoria={coloresPorCategoria} />
               </TableCell>
             )}
             <TableCell className="text-right font-mono tabular-nums">{redondear1_(j.puntaje)}</TableCell>
@@ -245,7 +348,7 @@ function TablaCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCateg
 // Tendencia al estilo Coinbase: solo color de texto verde/rojo con flecha,
 // SIN píldora de fondo (regla estricta del sistema: "color only, never
 // background fill"), y el número en mono.
-function Tendencia({ delta, fecha }) {
+function Tendencia({ delta, fecha, conFlecha = true }) {
   if (delta === null || delta === undefined) {
     return <span className="text-muted-foreground/60">—</span>;
   }
@@ -253,14 +356,14 @@ function Tendencia({ delta, fecha }) {
   if (delta > 0) {
     return (
       <span className="inline-flex items-center gap-0.5 font-mono tabular-nums font-medium text-success" title={titulo}>
-        <ArrowUpIcon className="size-3.5" /> +{delta}
+        {conFlecha && <ArrowUpIcon className="size-3.5" />} +{delta}
       </span>
     );
   }
   if (delta < 0) {
     return (
       <span className="inline-flex items-center gap-0.5 font-mono tabular-nums font-medium text-destructive" title={titulo}>
-        <ArrowDownIcon className="size-3.5" /> {delta}
+        {conFlecha && <ArrowDownIcon className="size-3.5" />} {delta}
       </span>
     );
   }
