@@ -3,6 +3,7 @@ import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FlowShell } from '@/components/FlowShell';
+import { FILA_HORIZONTAL } from '@/lib/layout';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -222,11 +223,62 @@ function RankingCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCat
   );
 }
 
+function CategoriaBadge({ categoria, coloresPorCategoria, className }) {
+  return (
+    <Badge
+      variant="secondary"
+      className={'text-xs tracking-wide ' + (className || '')}
+      style={{
+        color: coloresPorCategoria[categoria],
+        backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[categoria]} 12%, transparent)`,
+      }}
+    >
+      {abreviarCategoria_(categoria)}
+    </Badge>
+  );
+}
+
+/**
+ * Variante horizontal (`?horizontal=1`): todo en un renglón y el nombre
+ * como único elemento elástico -- es el único que puede partirse en dos
+ * líneas, porque es el único de largo impredecible.
+ *
+ * Puntaje y tendencia llevan ancho fijo en vez de ajustarse al contenido:
+ * si no, cada fila los ubicaría en una x distinta según cuántos dígitos
+ * tenga el número y la columna derecha quedaría temblando. `items-center`
+ * mantiene todo centrado contra el nombre cuando este ocupa dos líneas.
+ */
+function FilaJugadorHorizontal({ jugador, mostrarCategoria, coloresPorCategoria }) {
+  return (
+    <li className="flex items-center gap-2 border-b py-3 last:border-b-0">
+      <span className="w-5 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground">
+        {jugador.posicion}
+      </span>
+      <p className="min-w-0 flex-1 font-medium break-words">{jugador.etiqueta}</p>
+      {mostrarCategoria && (
+        <CategoriaBadge
+          categoria={jugador.categoria}
+          coloresPorCategoria={coloresPorCategoria}
+          className="shrink-0"
+        />
+      )}
+      <span className="w-12 shrink-0 text-right font-mono font-medium tabular-nums">
+        {redondear1_(jugador.puntaje)}
+      </span>
+      <span className="w-14 shrink-0 text-right text-sm">
+        <Tendencia delta={jugador.deltaUltimoPartido} fecha={jugador.fechaUltimoPartido} />
+      </span>
+    </li>
+  );
+}
+
 // Una fila de la lista de celular. El puesto va en una columna fija a la
 // izquierda para que los nombres arranquen todos alineados, y el bloque
 // de la derecha no se comprime nunca (`shrink-0`): si un nombre es largo
 // se parte él, no el puntaje.
-function FilaJugador({ jugador, mostrarCategoria, coloresPorCategoria }) {
+function FilaJugador(props) {
+  const { jugador, mostrarCategoria, coloresPorCategoria } = props;
+  if (FILA_HORIZONTAL) return <FilaJugadorHorizontal {...props} />;
   return (
     <li className="flex items-start gap-3 border-b py-3 last:border-b-0">
       <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-sm tabular-nums text-muted-foreground">
@@ -235,16 +287,11 @@ function FilaJugador({ jugador, mostrarCategoria, coloresPorCategoria }) {
       <div className="min-w-0 flex-1">
         <p className="font-medium break-words">{jugador.etiqueta}</p>
         {mostrarCategoria && (
-          <Badge
-            variant="secondary"
-            className="mt-1 text-xs tracking-wide"
-            style={{
-              color: coloresPorCategoria[jugador.categoria],
-              backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[jugador.categoria]} 12%, transparent)`,
-            }}
-          >
-            {abreviarCategoria_(jugador.categoria)}
-          </Badge>
+          <CategoriaBadge
+            categoria={jugador.categoria}
+            coloresPorCategoria={coloresPorCategoria}
+            className="mt-1"
+          />
         )}
       </div>
       <div className="shrink-0 text-right">

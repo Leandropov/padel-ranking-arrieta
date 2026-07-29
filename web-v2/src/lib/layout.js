@@ -8,4 +8,14 @@
  * Se lee una sola vez al cargar, no en cada render: la idea es comparar
  * dos versiones abriendo dos URLs, no cambiar de modo en caliente.
  */
-export const SIN_CAJA = new URLSearchParams(window.location.search).has('sincaja');
+const params = new URLSearchParams(window.location.search);
+
+export const SIN_CAJA = params.has('sincaja');
+
+/**
+ * Segunda prueba: la fila del ranking en celular con todo en una sola
+ * línea (puesto, nombre, categoría, puntaje y tendencia), donde el único
+ * que puede partirse en dos renglones es el nombre. Se activa con
+ * `?horizontal=1`.
+ */
+export const FILA_HORIZONTAL = params.has('horizontal');
