@@ -3,7 +3,6 @@ import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FlowShell } from '@/components/FlowShell';
-import { ESTILO_REFERENCIA, FILA_HORIZONTAL } from '@/lib/layout';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -179,10 +178,10 @@ export default function RankingPage() {
  * es el dato que la gente viene a buscar-- quedaba cortado fuera de
  * pantalla.
  *
- * Así que en celular no es una tabla: es una lista donde cada jugador
- * ocupa dos líneas (nombre + categoría a la izquierda, puntaje +
- * tendencia a la derecha). De `sm` para arriba sigue siendo la tabla de
- * siempre, que ahí entra sin problema.
+ * Así que en celular no es una tabla sino una lista de filas, donde el
+ * nombre es lo único que puede partirse en dos líneas y el resto se
+ * ordena en columnas de ancho fijo a la derecha. De `sm` para arriba
+ * sigue siendo la tabla de siempre, que ahí entra sin problema.
  */
 function RankingCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
   const filtrados = useMemo(() => {
@@ -239,68 +238,23 @@ function CategoriaBadge({ categoria, coloresPorCategoria, className }) {
 }
 
 /**
- * Variante horizontal (`?horizontal=1`): todo en un renglón y el nombre
- * como único elemento elástico -- es el único que puede partirse en dos
- * líneas, porque es el único de largo impredecible.
+ * Una fila del ranking en celular.
  *
- * Puntaje y tendencia llevan ancho fijo en vez de ajustarse al contenido:
- * si no, cada fila los ubicaría en una x distinta según cuántos dígitos
- * tenga el número y la columna derecha quedaría temblando. `items-center`
- * mantiene todo centrado contra el nombre cuando este ocupa dos líneas.
+ * Los cinco datos entran en un renglón. El nombre es el único elemento
+ * elástico --el único de largo impredecible-- y puede partirse en dos
+ * líneas; el `line-clamp-2` evita que un nombre disparatado genere una
+ * fila de tres.
+ *
+ * La jerarquía se resuelve sin tocar tamaños (los tres números comparten
+ * `text-sm`) y con solo dos pesos: bold para puesto y puntaje, que son
+ * los datos que la gente busca, y medium para nombre y delta. Cada dato
+ * se distingue por un canal distinto en vez de por acumulación: los
+ * números por peso, el delta por color, y el nombre por familia
+ * tipográfica (sans contra el mono de los números).
  */
-function FilaJugadorHorizontal({ jugador, mostrarCategoria, coloresPorCategoria }) {
+function FilaJugador({ jugador, mostrarCategoria, coloresPorCategoria }) {
   return (
     <li className="flex items-center gap-2 border-b py-3 last:border-b-0">
-      <span className="w-5 shrink-0 text-right font-mono text-sm tabular-nums text-muted-foreground">
-        {jugador.posicion}
-      </span>
-      <p className="min-w-0 flex-1 font-medium break-words">{jugador.etiqueta}</p>
-      {mostrarCategoria && (
-        <CategoriaBadge
-          categoria={jugador.categoria}
-          coloresPorCategoria={coloresPorCategoria}
-          className="shrink-0"
-        />
-      )}
-      <span className="w-12 shrink-0 text-right font-mono font-medium tabular-nums">
-        {redondear1_(jugador.puntaje)}
-      </span>
-      <span className="w-14 shrink-0 text-right text-sm">
-        <Tendencia delta={jugador.deltaUltimoPartido} fecha={jugador.fechaUltimoPartido} />
-      </span>
-    </li>
-  );
-}
-
-/**
- * Variante sobre el listado de la referencia (`?ref=1`).
- *
- * La diferencia con la primera versión apilada no es la estructura --las
- * dos ponen dos líneas a la izquierda y dos a la derecha-- sino el peso.
- * Acá el nombre es lo único oscuro de la fila y todo lo demás baja a
- * gris, incluido el puntaje. La lógica es que en una lista ordenada el
- * puntaje ya no necesita gritar: el orden de las filas ES el ranking, y
- * el número solo confirma. Así el ojo puede barrer nombres sin ruido,
- * que es lo que hace alguien buscándose.
- *
- * Las filas se separan con aire en vez de bordes, también de la
- * referencia: sin líneas, dos líneas de texto se leen naturalmente como
- * un bloque y no hace falta dibujar dónde termina cada jugador.
- */
-function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria }) {
-  return (
-    <li className="flex items-center gap-2 border-b py-3 last:border-b-0">
-      {/* Los tres números --puesto, puntaje y delta-- comparten tamaño
-          (text-sm), familia (mono) y tabular-nums. Antes el puntaje era
-          más grande y se leía como si fuera de otra jerarquía; ahora los
-          tres forman una sola banda de datos y el único que manda en la
-          fila es el nombre. */}
-      {/* Jerarquía por peso, no por tamaño --los tres números comparten
-          text-sm--, y con solo dos pesos en juego para no multiplicar
-          variantes: puesto y puntaje en bold (los dos datos que se
-          buscan), nombre y delta en medium. El delta se queda abajo a
-          propósito: es contexto del último partido, no el dato
-          principal, y ya se distingue por color. */}
       <span className="w-5 shrink-0 text-right font-mono text-sm font-bold tabular-nums">
         {jugador.posicion}
       </span>
@@ -345,39 +299,6 @@ function FilaJugadorReferencia({ jugador, mostrarCategoria, coloresPorCategoria 
   );
 }
 
-// Una fila de la lista de celular. El puesto va en una columna fija a la
-// izquierda para que los nombres arranquen todos alineados, y el bloque
-// de la derecha no se comprime nunca (`shrink-0`): si un nombre es largo
-// se parte él, no el puntaje.
-function FilaJugador(props) {
-  const { jugador, mostrarCategoria, coloresPorCategoria } = props;
-  if (ESTILO_REFERENCIA) return <FilaJugadorReferencia {...props} />;
-  if (FILA_HORIZONTAL) return <FilaJugadorHorizontal {...props} />;
-  return (
-    <li className="flex items-start gap-3 border-b py-3 last:border-b-0">
-      <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-sm tabular-nums text-muted-foreground">
-        {jugador.posicion}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium break-words">{jugador.etiqueta}</p>
-        {mostrarCategoria && (
-          <CategoriaBadge
-            categoria={jugador.categoria}
-            coloresPorCategoria={coloresPorCategoria}
-            className="mt-1"
-          />
-        )}
-      </div>
-      <div className="shrink-0 text-right">
-        <p className="font-mono font-medium tabular-nums">{redondear1_(jugador.puntaje)}</p>
-        <div className="mt-1 text-sm">
-          <Tendencia delta={jugador.deltaUltimoPartido} fecha={jugador.fechaUltimoPartido} />
-        </div>
-      </div>
-    </li>
-  );
-}
-
 function TablaCategoria({ filtrados, mostrarCategoria, coloresPorCategoria }) {
   return (
     <Table>
@@ -401,16 +322,7 @@ function TablaCategoria({ filtrados, mostrarCategoria, coloresPorCategoria }) {
             <TableCell className="font-medium">{j.etiqueta}</TableCell>
             {mostrarCategoria && (
               <TableCell>
-                <Badge
-                  variant="secondary"
-                  className="text-xs tracking-wide"
-                  style={{
-                    color: coloresPorCategoria[j.categoria],
-                    backgroundColor: `color-mix(in srgb, ${coloresPorCategoria[j.categoria]} 12%, transparent)`,
-                  }}
-                >
-                  {abreviarCategoria_(j.categoria)}
-                </Badge>
+                <CategoriaBadge categoria={j.categoria} coloresPorCategoria={coloresPorCategoria} />
               </TableCell>
             )}
             <TableCell className="text-right font-mono tabular-nums">{redondear1_(j.puntaje)}</TableCell>
