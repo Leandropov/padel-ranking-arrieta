@@ -28,3 +28,11 @@ export const FILA_HORIZONTAL = params.has('horizontal');
  * categoría, puntaje, tendencia-- baja de peso a gris.
  */
 export const ESTILO_REFERENCIA = params.has('ref');
+
+/**
+ * `?mock=1`: lee el ranking de una copia guardada en public/ en vez de
+ * pedírselo a Apps Script. Es para poder mirar diseño en el celular
+ * cuando el backend está caído --como pasó el 29/07/2026, que devolvía
+ * 302 y se colgaba--. Solo existe en esta rama de pruebas.
+ */
+export const MOCK = params.has('mock');

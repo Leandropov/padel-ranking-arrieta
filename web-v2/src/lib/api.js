@@ -1,3 +1,5 @@
+import { MOCK } from '@/lib/layout';
+
 // URL de la web app de Apps Script (backend). Si el día de mañana se
 // vuelve a implementar con "Nueva versión", la URL no cambia -- solo
 // cambiaría si se crea una implementación completamente nueva.
@@ -25,6 +27,13 @@ export function getContext() {
 }
 
 export function getRanking() {
+  // Ver MOCK en lib/layout.js: atajo de la rama de pruebas para mirar
+  // diseño con el backend caído.
+  if (MOCK) {
+    return fetch('/mock-ranking.json')
+      .then((r) => r.json())
+      .then((d) => d.data);
+  }
   return llamar('vista=ranking');
 }
 
