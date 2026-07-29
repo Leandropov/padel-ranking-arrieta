@@ -74,7 +74,10 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
 **Este proyecto ya está publicado en Vercel**:
 [padel-ranking-arrieta-v2.vercel.app](https://padel-ranking-arrieta-v2.vercel.app).
 El proyecto de Vercel es `padel-ranking-arrieta-v2` (team `little-busy`),
-con Root Directory `web-v2`. Para publicar:
+con Root Directory `web-v2`, conectado a este repo en la rama `main`.
+**Cada push a `main` publica solo**, no hace falta correr ningún comando.
+
+Para republicar a mano igual (desde otra máquina, o sin esperar al push):
 ```
 # desde la RAÍZ del repo, no desde web-v2/
 VERCEL_ORG_ID=team_AsltlRnWVjqeyPBZJbDQvOfh \
@@ -95,8 +98,9 @@ Dos trampas de ese comando, las dos verificadas a mano:
 `web/` es el frontend v1 y **ya no se usa**: quedó como referencia. Su
 proyecto de Vercel (`padel-ranking-arrieta`) sigue en línea en
 [padel-ranking-arrieta.vercel.app](https://padel-ranking-arrieta.vercel.app)
-y en `web-ashy-pi-16.vercel.app`, y según el historial de este README se
-publica solo con cada push a `main`.
+y en `web-ashy-pi-16.vercel.app`, y **también está conectado a `main` con
+Root Directory `web`**, así que cada push republica las dos versiones.
+Mientras eso siga así, conviene no dejar `web/` a medio editar.
 
 Ojo si se toca algo de `web/`: ese código **no** tiene el timeout de
 `llamar()` que sí tiene la v2, así que ante un backend colgado deja la
