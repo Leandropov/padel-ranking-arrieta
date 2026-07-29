@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getRanking } from '@/lib/api';
 import { formatearFechaLegible } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FlowShell } from '@/components/FlowShell';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -94,8 +95,7 @@ export default function RankingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-4">
-      <Card>
+    <FlowShell ancho="2xl">
         {/* Cover verde bosque (#16432c) con la cancha en lima — el par
             oscuro+lima de la referencia. */}
         <svg
@@ -167,8 +167,7 @@ export default function RankingPage() {
             ))}
           </Tabs>
         </CardContent>
-      </Card>
-    </div>
+    </FlowShell>
   );
 }
 

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { getContext, submitResultado } from '@/lib/api';
 import { PlayerCombobox } from '@/components/PlayerCombobox';
 import { ResultadoInput } from '@/components/ResultadoInput';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FlowShell } from '@/components/FlowShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -174,66 +175,62 @@ export default function ResultadoPage() {
 
   if (paso === 'done') {
     return (
-      <div className="mx-auto max-w-md p-4">
-        <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-            <CircleCheckIcon className="size-7 text-primary" />
+      <FlowShell>
+        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
+          <CircleCheckIcon className="size-7 text-primary" />
+        </div>
+        <CardHeader className="text-center">
+          <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Resultado registrado!</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <FilaDelta jugadores={resultadoEnvio.equipoA} delta={resultadoEnvio.deltaA} />
+            <FilaDelta jugadores={resultadoEnvio.equipoB} delta={resultadoEnvio.deltaB} />
           </div>
-          <CardHeader className="text-center">
-            <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Resultado registrado!</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <FilaDelta jugadores={resultadoEnvio.equipoA} delta={resultadoEnvio.deltaA} />
-              <FilaDelta jugadores={resultadoEnvio.equipoB} delta={resultadoEnvio.deltaB} />
-            </div>
-            <Button className="w-full" render={<a href="#ranking" />}>
-              Ver ranking
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          <Button className="w-full" render={<a href="#ranking" />}>
+            Ver ranking
+          </Button>
+        </CardContent>
+      </FlowShell>
     );
   }
 
   if (paso === 'confirm') {
     return (
-      <div className="mx-auto max-w-md p-4">
-        <Card>
-          <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-            <ClipboardCheckIcon className="size-7 text-primary" />
+      <FlowShell>
+        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
+          <ClipboardCheckIcon className="size-7 text-primary" />
+        </div>
+        <CardHeader className="text-center">
+          <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Revisa los datos antes de enviar</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Fila label="Quién carga" valor={etiquetaDe(form.quienEres)} />
+          <Fila label="Cancha" valor={form.cancha} />
+          <Fila label="Fecha" valor={fecha} />
+          <Fila label="Hora" valor={form.hora} />
+          <FilaEquipo label="Equipo A" jugadores={form.equipoA.map(etiquetaDe)} />
+          <FilaEquipo label="Equipo B" jugadores={form.equipoB.map(etiquetaDe)} />
+          <Fila label="Ganador" valor={'Equipo ' + form.ganador} />
+          <Fila label="Resultado" valor={form.resultado} />
+          {modoAdmin && <Fila label="Carga por administración" valor={form.motivo} />}
+
+          {confirmError && (
+            <Alert variant="error">
+              <AlertDescription>{confirmError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col gap-4 pt-2">
+            <Button onClick={confirmarEnvio} disabled={enviando}>
+              {enviando ? 'Enviando…' : 'Confirmar y enviar'}
+            </Button>
+            <Button variant="secondary" onClick={() => setPaso('form')} disabled={enviando}>
+              Corregir
+            </Button>
           </div>
-          <CardHeader className="text-center">
-            <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Revisa los datos antes de enviar</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Fila label="Quién carga" valor={etiquetaDe(form.quienEres)} />
-            <Fila label="Cancha" valor={form.cancha} />
-            <Fila label="Fecha" valor={fecha} />
-            <Fila label="Hora" valor={form.hora} />
-            <FilaEquipo label="Equipo A" jugadores={form.equipoA.map(etiquetaDe)} />
-            <FilaEquipo label="Equipo B" jugadores={form.equipoB.map(etiquetaDe)} />
-            <Fila label="Ganador" valor={'Equipo ' + form.ganador} />
-            <Fila label="Resultado" valor={form.resultado} />
-            {modoAdmin && <Fila label="Carga por administración" valor={form.motivo} />}
-
-            {confirmError && (
-              <Alert variant="error">
-                <AlertDescription>{confirmError}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex flex-col gap-4 pt-2">
-              <Button onClick={confirmarEnvio} disabled={enviando}>
-                {enviando ? 'Enviando…' : 'Confirmar y enviar'}
-              </Button>
-              <Button variant="secondary" onClick={() => setPaso('form')} disabled={enviando}>
-                Corregir
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </FlowShell>
     );
   }
 
@@ -244,8 +241,7 @@ export default function ResultadoPage() {
 
   return (
     <div className="relative min-h-svh">
-      <div className="mx-auto max-w-md p-4">
-      <Card>
+      <FlowShell>
         <svg
           aria-hidden="true"
           viewBox="0 0 460 175"
@@ -482,8 +478,7 @@ export default function ResultadoPage() {
             </>
           )}
         </CardContent>
-      </Card>
-      </div>
+      </FlowShell>
     </div>
   );
 }
