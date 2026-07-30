@@ -183,7 +183,11 @@ function submitResultado(payload) {
     const promedioA = (mapaJugadores[a1].puntaje + mapaJugadores[a2].puntaje) / 2;
     const promedioB = (mapaJugadores[b1].puntaje + mapaJugadores[b2].puntaje) / 2;
     const ganoA = payload.ganador === 'A';
-    const deltaA = calcularDeltaA_(promedioA, promedioB, ganoA, config.K, config.D);
+    // El margen del resultado no toca el resultado esperado (eso es D),
+    // amplifica el K de este partido puntual si el marcador fue
+    // contundente. Ver factorMargen_ en Elo.js.
+    const kEfectivo = config.K * factorMargen_(payload.resultado, config.pesoMargen);
+    const deltaA = calcularDeltaA_(promedioA, promedioB, ganoA, kEfectivo, config.D);
     const deltaB = -deltaA;
 
     historialSheet.appendRow([

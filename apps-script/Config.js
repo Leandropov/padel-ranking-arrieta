@@ -31,6 +31,7 @@ const CONFIG_ROW_CIERRE = 14;
 const CONFIG_ROW_DURACION_BLOQUE = 15;
 const CONFIG_ROW_VENTANA_DETECCION = 16;
 const CONFIG_ROW_PIN_ADMIN = 17;
+const CONFIG_ROW_PESO_MARGEN = 18;
 
 function getSpreadsheet_() {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
@@ -123,7 +124,12 @@ function getConfig_() {
   const duracionBloque = Number(buscar_('cada bloque de cancha'));
   const ventanaDeteccion = Number(buscar_('ventana'));
   const pinAdmin = String(buscar_('pin de administración') || '');
-  return { K, D, canchas, apertura, cierre, duracionBloque, ventanaDeteccion, pinAdmin };
+  // Si la fila todavía no existe en la planilla (clubes ya instalados
+  // antes de este agregado), buscar_ devuelve '' y Number('') es 0, así
+  // que el ajuste por margen queda desactivado hasta que alguien lo
+  // agregue a mano -- no hace falta migrar planillas existentes.
+  const pesoMargen = Number(buscar_('margen del resultado'));
+  return { K, D, canchas, apertura, cierre, duracionBloque, ventanaDeteccion, pinAdmin, pesoMargen };
 }
 
 function hhmmAMinutos_(hhmm) {

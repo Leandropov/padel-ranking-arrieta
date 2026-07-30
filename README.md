@@ -183,6 +183,12 @@ Abrí la pestaña **Categorías** de la planilla y ajustá:
   partido.
 - **D** (fila 10, columna B): qué tan determinante es la diferencia de
   nivel en el resultado esperado.
+- **Peso del margen del resultado** (fila 18, columna B): cuánto se
+  amplifica el K de un partido puntual si el marcador fue contundente
+  (ej. doble 6-0 mueve más puntos que un 7-6 en el tercero). 0 lo
+  desactiva del todo. En una planilla creada antes de este agregado,
+  esta fila no existe todavía y el ajuste queda desactivado (equivale a
+  0) hasta que la agregues a mano con esa misma etiqueta.
 - **Canchas** (fila 11): lista separada por coma, tal cual las vas a
   ofrecer en el desplegable.
 - **Horario** (filas 13-16): apertura, cierre, duración de bloque y
@@ -219,6 +225,16 @@ pareja B, resultado esperado de A con la fórmula Elo, delta de puntos
 = `K × (resultado_real_A - resultado_esperado_A)`. La pareja B recibe
 exactamente el delta opuesto (sistema de suma cero). El detalle está en
 `Elo.js`.
+
+El K de ese cálculo puede amplificarse según qué tan contundente fue el
+marcador (ver "Peso del margen del resultado" arriba): nunca lo reduce,
+solo le suma peso extra a los partidos muy desparejos, porque de qué
+tan parejo se espera el resultado ya se encarga D. Por eso el campo
+"Resultado exacto" del formulario pide los juegos del equipo
+**ganador** primero en cada set (ej. un partido ganado 6-4, 3-6, 6-2 se
+anota así aunque el set del medio se haya perdido) — el orden nunca
+depende de quién ganó cada set individual, solo de quién ganó el
+partido completo.
 
 ## Administración
 

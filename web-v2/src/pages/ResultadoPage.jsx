@@ -250,6 +250,10 @@ export default function ResultadoPage() {
   const modo = ctx.modo;
   const labelEquipoA = form.equipoA.length === 2 ? etiquetasDe(form.equipoA) : 'Equipo A';
   const labelEquipoB = form.equipoB.length === 2 ? etiquetasDe(form.equipoB) : 'Equipo B';
+  // El backend usa el orden del marcador para pesar partidos contundentes
+  // (ver factorMargen_ en Elo.js): siempre van primero los juegos del
+  // equipo que ganó el partido, set por set.
+  const labelGanador = form.ganador === 'A' ? labelEquipoA : labelEquipoB;
 
   return (
     <div className="relative min-h-svh">
@@ -435,7 +439,7 @@ export default function ResultadoPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Resultado exacto (ej: 6-4, 6-3)</Label>
+                <Label>Resultado exacto — juegos de {labelGanador} primero en cada set (ej: 6-4, 6-3)</Label>
                 <ResultadoInput value={form.resultado} onChange={(v) => actualizar('resultado', v)} />
               </div>
 

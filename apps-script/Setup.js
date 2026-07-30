@@ -75,6 +75,9 @@ function setupCategorias_(ss) {
   sheet
     .getRange(CONFIG_ROW_PIN_ADMIN, 1, 1, 2)
     .setValues([['PIN de administración (cambiar por uno propio, no compartir)', '0000']]);
+  sheet
+    .getRange(CONFIG_ROW_PESO_MARGEN, 1, 1, 2)
+    .setValues([['Peso del margen del resultado (0 desactiva esto, ej. 0.3)', 0.3]]);
   sheet.autoResizeColumns(1, 3);
   sheet.setColumnWidth(1, 320);
 }
