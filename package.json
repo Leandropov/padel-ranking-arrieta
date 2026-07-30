@@ -1,0 +1,25 @@
+{
+  "name": "padel-ranking-arrieta",
+  "private": true,
+  "description": "Herramientas de despliegue del backend Apps Script del ranking",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "whoami": "clasp show-authorized-user",
+    "status": "clasp show-file-status",
+    "pull": "clasp pull",
+    "push": "clasp push",
+    "deploy:test": "clasp create-deployment -d \"prueba temporal\"",
+    "promote": "clasp update-deployment AKfycbyIWdxh5iUBrjFclCeMZdfyl1N5HvK2MgOkioVpAjNmTwih4XzFa3NcSwQcL7PY7IC3",
+    "undeploy": "clasp delete-deployment",
+    "deploy:directo": "clasp create-deployment -i AKfycbyIWdxh5iUBrjFclCeMZdfyl1N5HvK2MgOkioVpAjNmTwih4XzFa3NcSwQcL7PY7IC3",
+    "deployments": "clasp list-deployments",
+    "versions": "clasp list-versions",
+    "logs": "clasp tail-logs",
+    "open": "clasp open-script"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.3.0"
+  }
+}

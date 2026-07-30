@@ -42,20 +42,26 @@ Script. Cubre los puntos 1 a 9 del diseño original, incluyendo el QR
 1. **Habilitá la API de Apps Script** en tu cuenta de Google: andá a
    [script.google.com/home/usersettings](https://script.google.com/home/usersettings)
    y activá "Apps Script API". Sin esto, `clasp` no puede pushear código.
-2. Instalá dependencias y logueate con `clasp` (la CLI oficial de Apps
-   Script), usando la cuenta de Google del club:
+2. Instalá dependencias desde la raíz del repo (trae `clasp`, la CLI
+   oficial de Apps Script, como dependencia del proyecto):
    ```
-   npx @google/clasp login
+   npm install
    ```
+   Después logueate con la cuenta de Google del club:
+   ```
+   npx clasp login
+   ```
+   El login guarda las credenciales en `~/.clasprc.json`, fuera del
+   repo, así que se hace una sola vez por máquina y no por proyecto.
 3. Este repo ya tiene un `.clasp.json` apuntando al proyecto real
    (`rootDir: apps-script/`). Si estás armando el proyecto desde cero,
-   creá uno nuevo con `npx @google/clasp create --type webapp --rootDir
+   creá uno nuevo con `npx clasp create-script --type webapp --rootDir
    ./apps-script` y reemplazá el `scriptId` en `.clasp.json`.
 4. Subí el código:
    ```
-   npx @google/clasp push
+   npm run push
    ```
-5. En el editor de Apps Script (`npx @google/clasp open`), elegí
+5. En el editor de Apps Script (`npm run open`), elegí
    `setupClub` en el desplegable de funciones y tocá **Ejecutar**. La
    primera vez pide autorización — es tu propio script accediendo a tus
    propios Sheets/Forms, aceptá los permisos.
@@ -120,16 +126,49 @@ retirada.
 
 ### Actualizar el backend después de la instalación
 
-Cada vez que cambie algo en `apps-script/`:
+Antes de tocar nada, chequeá que el remoto no tenga ediciones hechas a
+mano en el editor web (`push` las pisa sin avisar):
 ```
-npx @google/clasp push
-npx @google/clasp deployments        # confirmar el ID de la implementación activa
-npx @google/clasp deploy -i <ID> -d "descripción del cambio"
+npm run pull        # y después git diff
 ```
-`push` sube el código al editor; `deploy -i <ID>` publica esa versión
-en el link `/exec` que ya usa el frontend, sin generar un link nuevo.
-Si se omite `-i <ID>`, `clasp deploy` crea una implementación nueva con
-otra URL — no es lo que queremos.
+
+El despliegue va **por etapas**, para que producción nunca reciba una
+versión sin probar:
+```
+npm run push                          # 1. sube el código al editor
+npm run deploy:test                   # 2. implementación temporal con URL propia
+                                      #    → probala con curl -sL "<URL>/exec"
+npm run versions                       # 3. anotá el número de versión que creó
+npm run promote -- -V <version> -d "descripción del cambio"
+npm run undeploy -- <ID_TEMPORAL>     # 4. limpiá la temporal
+```
+
+`promote` apunta la implementación de producción a una versión ya
+verificada. El ID de producción está fijado dentro del script (en el
+`package.json`) a propósito: es el que coincide con la URL `/exec` que
+usan `web-v2/src/lib/api.js` y `web/src/lib/api.js`. Si se omite, clasp
+crea una implementación **nueva con otra URL** y el frontend deja de
+funcionar.
+
+El paso 2 no es opcional por capricho: la implementación `@HEAD` **no
+sirve para verificar**, porque pide login de Google y a un `curl`
+anónimo le devuelve el HTML de accounts.google.com.
+
+Si el cambio es menor y no amerita la vuelta completa, `npm run
+deploy:directo -- -d "descripción"` publica el HEAD actual directo a
+producción, sin verificación previa.
+
+Ojo con el `--` en todos los casos: sin él, npm se come las banderas en
+vez de pasárselas a clasp.
+
+Otros comandos disponibles:
+```
+npm run status         # qué archivos subiría el push
+npm run deployments    # implementaciones activas y su ID
+npm run logs           # últimas entradas de log
+npm run open           # abre el editor de Apps Script
+npm run whoami         # con qué cuenta estás logueado
+```
 
 ## Antes de invitar jugadores
 
