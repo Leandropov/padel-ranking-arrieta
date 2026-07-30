@@ -189,6 +189,14 @@ Abrí la pestaña **Categorías** de la planilla y ajustá:
   desactiva del todo. En una planilla creada antes de este agregado,
   esta fila no existe todavía y el ajuste queda desactivado (equivale a
   0) hasta que la agregues a mano con esa misma etiqueta.
+- **Peso de confiabilidad** (fila 19, columna B): cuánto se ajusta el K
+  según qué tan establecido está el jugador menos establecido del
+  partido — un debutante mueve más (para encontrarle el nivel real
+  rápido), un partido entre puros veteranos mueve menos (para no dejar
+  que un mal día puntual les arruine el puntaje). Reutiliza el valor de
+  "Partidos de referencia" de abajo como el punto donde el ajuste llega
+  a cero. Mismo criterio que el margen: en una planilla vieja esta fila
+  no existe y el ajuste queda desactivado hasta que la agregues a mano.
 - **Canchas** (fila 11): lista separada por coma, tal cual las vas a
   ofrecer en el desplegable.
 - **Horario** (filas 13-16): apertura, cierre, duración de bloque y
@@ -200,7 +208,11 @@ Abrí la pestaña **Categorías** de la planilla y ajustá:
 ### Cómo calibrar K y D
 
 La lógica del diseño original: decidí cuántos partidos querés que le
-tome a alguien mal anotado corregir su nivel (4 o 5 es razonable).
+tome a alguien mal anotado corregir su nivel (4 o 5 es razonable). Ese
+mismo número ("Partidos de referencia", fila 12) ya no es solo para tu
+cálculo a mano: desde el peso de confiabilidad (ver arriba), el código
+también lo usa para decidir hasta qué partido tratar a alguien como
+debutante.
 
 ```
 K = ancho_de_categoría / partidos_de_referencia
@@ -235,6 +247,14 @@ tan parejo se espera el resultado ya se encarga D. Por eso el campo
 anota así aunque el set del medio se haya perdido) — el orden nunca
 depende de quién ganó cada set individual, solo de quién ganó el
 partido completo.
+
+El K también se ajusta según qué tan establecido está el jugador menos
+establecido de los 4 (ver "Peso de confiabilidad" arriba) — a
+diferencia del margen, este sí puede mover el K para abajo: un partido
+con un debutante mueve más de lo normal, un partido entre puros
+veteranos mueve menos. Los dos ajustes (margen y confiabilidad) se
+combinan multiplicando el mismo K base, no se pisan entre sí. El
+detalle está en `factorConfiabilidad_`, en `Elo.js`.
 
 ## Administración
 

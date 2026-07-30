@@ -183,10 +183,14 @@ function submitResultado(payload) {
     const promedioA = (mapaJugadores[a1].puntaje + mapaJugadores[a2].puntaje) / 2;
     const promedioB = (mapaJugadores[b1].puntaje + mapaJugadores[b2].puntaje) / 2;
     const ganoA = payload.ganador === 'A';
-    // El margen del resultado no toca el resultado esperado (eso es D),
-    // amplifica el K de este partido puntual si el marcador fue
-    // contundente. Ver factorMargen_ en Elo.js.
-    const kEfectivo = config.K * factorMargen_(payload.resultado, config.pesoMargen);
+    // El margen del resultado y la confiabilidad son dos ajustes
+    // independientes sobre el K de este partido puntual -- se combinan
+    // multiplicando, ninguno reemplaza al otro. Ver Elo.js.
+    const partidosJugados = contarPartidosJugados_(historialSheet, [a1, a2, b1, b2]);
+    const factor =
+      factorMargen_(payload.resultado, config.pesoMargen) *
+      factorConfiabilidad_(partidosJugados, config.partidosReferencia, config.pesoConfiabilidad);
+    const kEfectivo = config.K * factor;
     const deltaA = calcularDeltaA_(promedioA, promedioB, ganoA, kEfectivo, config.D);
     const deltaB = -deltaA;
 
@@ -303,4 +307,24 @@ function leerClavesHistorial_(historialSheet) {
 
 function hayDuplicado_(claves, cancha, fecha, hora) {
   return claves.has(fecha + '|' + cancha + '|' + hora);
+}
+
+/**
+ * Cuántos partidos jugó cada uno de los `ids` hasta ahora, contando
+ * apariciones en las columnas E..H de Historial. Una sola lectura
+ * agrupada de esas 4 columnas (no un COUNTIF por jugador), mismo
+ * criterio que leerClavesHistorial_. Alimenta factorConfiabilidad_.
+ */
+function contarPartidosJugados_(historialSheet, ids) {
+  const lastRow = historialSheet.getLastRow();
+  const conteo = {};
+  if (lastRow >= 2) {
+    const values = historialSheet.getRange(2, 5, lastRow - 1, 4).getValues(); // E..H
+    values.forEach((fila) => {
+      fila.forEach((id) => {
+        conteo[id] = (conteo[id] || 0) + 1;
+      });
+    });
+  }
+  return ids.map((id) => conteo[id] || 0);
 }

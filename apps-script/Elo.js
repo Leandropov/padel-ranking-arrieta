@@ -14,6 +14,12 @@
  * - "Peso del margen del resultado" (ver factorMargen_) es aparte de K y
  *   D: no toca el resultado esperado, amplifica el K de ESE partido si
  *   el marcador fue contundente. 0 lo desactiva.
+ * - "Peso de confiabilidad" (ver factorConfiabilidad_) es otro ajuste
+ *   más sobre K, independiente del margen: un debutante mueve más (para
+ *   encontrar su nivel real rápido) y un partido entre puros veteranos
+ *   mueve menos (para no dejar que un mal día puntual les arruine el
+ *   puntaje). Usa la misma "Partidos de referencia" que ya calibrás a
+ *   mano para K.
  */
 
 /**
@@ -84,4 +90,37 @@ function factorMargen_(resultado, pesoMargen) {
   const diferencia = sets.reduce((acc, s) => acc + (s.ganador - s.perdedor), 0);
   const proporcion = Math.max(0, diferencia / totalJuegos); // 0 = parejo, 1 = arrasada
   return 1 + pesoMargen * proporcion;
+}
+
+/**
+ * Cuánto ajustar el K de un partido según qué tan establecido está el
+ * jugador MENOS establecido de los 4 (el mínimo de partidos jugados
+ * manda, no el promedio): si hay un debutante en el partido, ese
+ * partido mueve más -- aunque los otros 3 sean veteranos -- porque
+ * encontrarle el nivel real a él pesa más que proteger a los demás de
+ * un resultado ruidoso. Un partido entre puros veteranos mueve menos,
+ * para no dejar que un mal día puntual les arruine el puntaje ya
+ * asentado.
+ *
+ * Reutiliza la misma "Partidos de referencia" que ya usás a mano para
+ * calibrar K (Categorías): el ajuste llega a exactamente 1 (sin cambio)
+ * justo en esa cantidad de partidos, sube hasta el techo en el debut
+ * (0 partidos) y baja hasta el piso al doble de esa cantidad -- de ahí
+ * en adelante se queda plano, no sigue bajando indefinidamente.
+ *
+ * @param partidosJugados array con los partidos previos (antes de
+ *   este) de los 4 jugadores del partido
+ * @param partidosReferencia el mismo valor que ya calibrás a mano
+ *   (Categorías, fila "Partidos de referencia...")
+ * @param pesoConfiabilidad cuánto puede llegar a mover en cada
+ *   dirección (proporción, ej. 0.3 = hasta 30% más en el debut, hasta
+ *   30% menos entre veteranos). 0, vacío, o partidosReferencia en 0
+ *   desactiva el ajuste (factor siempre 1).
+ */
+function factorConfiabilidad_(partidosJugados, partidosReferencia, pesoConfiabilidad) {
+  if (!pesoConfiabilidad || !partidosReferencia) return 1;
+  const minimo = Math.min(...partidosJugados);
+  const proporcion = (partidosReferencia - minimo) / partidosReferencia; // 1 en el debut, 0 en partidosReferencia, -1 al doble
+  const acotada = Math.max(-1, Math.min(1, proporcion));
+  return 1 + pesoConfiabilidad * acotada;
 }

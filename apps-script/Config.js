@@ -32,6 +32,7 @@ const CONFIG_ROW_DURACION_BLOQUE = 15;
 const CONFIG_ROW_VENTANA_DETECCION = 16;
 const CONFIG_ROW_PIN_ADMIN = 17;
 const CONFIG_ROW_PESO_MARGEN = 18;
+const CONFIG_ROW_PESO_CONFIABILIDAD = 19;
 
 function getSpreadsheet_() {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
@@ -129,7 +130,25 @@ function getConfig_() {
   // que el ajuste por margen queda desactivado hasta que alguien lo
   // agregue a mano -- no hace falta migrar planillas existentes.
   const pesoMargen = Number(buscar_('margen del resultado'));
-  return { K, D, canchas, apertura, cierre, duracionBloque, ventanaDeteccion, pinAdmin, pesoMargen };
+  // "Partidos de referencia" ya existía en la planilla desde el
+  // principio, pero solo como dato de referencia para que el club
+  // calculara K a mano (ver README) -- nunca se leía acá. Ahora también
+  // alimenta factorConfiabilidad_.
+  const partidosReferencia = Number(buscar_('partidos de referencia'));
+  const pesoConfiabilidad = Number(buscar_('confiabilidad'));
+  return {
+    K,
+    D,
+    canchas,
+    apertura,
+    cierre,
+    duracionBloque,
+    ventanaDeteccion,
+    pinAdmin,
+    pesoMargen,
+    partidosReferencia,
+    pesoConfiabilidad,
+  };
 }
 
 function hhmmAMinutos_(hhmm) {

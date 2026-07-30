@@ -78,6 +78,11 @@ function setupCategorias_(ss) {
   sheet
     .getRange(CONFIG_ROW_PESO_MARGEN, 1, 1, 2)
     .setValues([['Peso del margen del resultado (0 desactiva esto, ej. 0.3)', 0.3]]);
+  sheet
+    .getRange(CONFIG_ROW_PESO_CONFIABILIDAD, 1, 1, 2)
+    .setValues([
+      ['Peso de confiabilidad para debutantes y veteranos (0 desactiva esto, ej. 0.3)', 0.3],
+    ]);
   sheet.autoResizeColumns(1, 3);
   sheet.setColumnWidth(1, 320);
 }
