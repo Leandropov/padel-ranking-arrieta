@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getContext, submitResultado } from '@/lib/api';
 import { PlayerCombobox } from '@/components/PlayerCombobox';
-import { ResultadoInput } from '@/components/ResultadoInput';
+import { Marcador } from '@/components/Marcador';
+import { ganadorDe, serializarResultado, setsCompletos, setsVacios } from '@/lib/marcador';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FlowShell } from '@/components/FlowShell';
 import { Button } from '@/components/ui/button';
@@ -25,11 +26,24 @@ const vacio = {
   hora: '',
   equipoA: [],
   equipoB: [],
-  ganador: 'A',
-  resultado: '',
+  // El marcador es la fuente de verdad: `ganador` y `resultado` (lo que
+  // realmente viaja al backend) se derivan de acá recién al enviar.
+  sets: setsVacios(),
+  // Solo se usa cuando el marcador no alcanza para deducir el ganador
+  // (partido abandonado con los sets repartidos).
+  ganadorManual: '',
   motivo: '',
   pin: '',
 };
+
+const ERROR_GANADOR =
+  'Con este marcador no podemos deducir quién ganó. Si el partido se abandonó, indícalo abajo.';
+
+// El marcador decide; `ganadorManual` solo entra si el marcador no
+// alcanza (sets repartidos y sin tercero, o sea un abandono).
+function ganadorDelPartido(f) {
+  return ganadorDe(f.sets) || f.ganadorManual || null;
+}
 
 export default function ResultadoPage() {
   const [paso, setPaso] = useState('cargando');
@@ -43,6 +57,7 @@ export default function ResultadoPage() {
   const [enviando, setEnviando] = useState(false);
   const [resultadoEnvio, setResultadoEnvio] = useState(null);
   const [bloqueElegido, setBloqueElegido] = useState(false);
+  const [pedirGanador, setPedirGanador] = useState(false);
 
   const cargar = useCallback(() => {
     setErrorCarga(false);
@@ -86,6 +101,14 @@ export default function ResultadoPage() {
 
   function etiquetasDe(ids) {
     return ids.map(etiquetaDe).join(' / ');
+  }
+
+  // Lo que se guarda es la hora en que terminó (la de fin del bloque),
+  // pero lo que la persona eligió fue el bloque entero "19:00–20:30".
+  // Al revisar, ver sólo "20:30" cuesta reconocerlo como el mismo dato.
+  function bloqueDe(hora) {
+    const bloque = ctx?.bloquesDelDia.find((b) => b.fin === hora);
+    return bloque ? bloque.inicio + '–' + bloque.fin : hora;
   }
 
   // Al elegir "quién eres" lo ubicamos solo en un equipo, para que no
@@ -135,8 +158,13 @@ export default function ResultadoPage() {
     if (!modoAdmin && !p.equipoA.includes(p.quienEres) && !p.equipoB.includes(p.quienEres)) {
       return 'Quien completa el formulario debe ser uno de los 4 jugadores del partido. Si no jugaste, usa la opción de administración.';
     }
-    if (!p.resultado) return 'Falta el resultado (ej: 6-4, 6-3).';
-    if (!/^\d-\d(, \d-\d){1,2}$/.test(p.resultado)) return 'Completa el resultado de al menos 2 sets (ej: 6-4, 6-3).';
+    if (setsCompletos(p.sets).length < 2) {
+      return 'Completa el marcador: al menos 2 sets, con los juegos de los dos equipos.';
+    }
+    if (setsCompletos(p.sets).some((s) => s.a === s.b)) {
+      return 'Un set no puede terminar empatado. Revisa el marcador.';
+    }
+    if (!ganadorDelPartido(p)) return ERROR_GANADOR;
     if (modoAdmin && !p.motivo) return 'Las cargas por administración necesitan un motivo.';
     if (modoAdmin && !p.pin) return 'Ingresa el PIN de administración.';
     return null;
@@ -145,14 +173,31 @@ export default function ResultadoPage() {
   function irAConfirmar() {
     const err = validar(form);
     setFormError(err || '');
-    if (err) return;
+    if (err) {
+      // El selector manual de ganador no vive en el formulario: aparece
+      // solo cuando el marcador no alcanzó, para no meterle un campo de
+      // más al caso normal.
+      if (err === ERROR_GANADOR) setPedirGanador(true);
+      return;
+    }
     setPaso('confirm');
   }
 
   function confirmarEnvio() {
     setConfirmError('');
     setEnviando(true);
-    submitResultado({ ...form, fecha, cargaAdministracion: modoAdmin })
+    // El backend sigue esperando `ganador` ('A'/'B') y `resultado` como
+    // string con los juegos del ganador primero; `sets` y `ganadorManual`
+    // son del formulario y no viajan.
+    const { sets, ganadorManual: _descartado, ...datos } = form;
+    const ganador = ganadorDelPartido(form);
+    submitResultado({
+      ...datos,
+      ganador,
+      resultado: serializarResultado(sets, ganador),
+      fecha,
+      cargaAdministracion: modoAdmin,
+    })
       .then((res) => {
         setResultadoEnvio(res);
         setPaso('done');
@@ -219,13 +264,31 @@ export default function ResultadoPage() {
         <CardContent className="space-y-2">
           <Fila label="Quién carga" valor={etiquetaDe(form.quienEres)} />
           <Fila label="Cancha" valor={form.cancha} />
-          <Fila label="Fecha" valor={fecha} />
-          <Fila label="Hora" valor={form.hora} />
-          <FilaEquipo label="Equipo A" jugadores={form.equipoA.map(etiquetaDe)} />
-          <FilaEquipo label="Equipo B" jugadores={form.equipoB.map(etiquetaDe)} />
-          <Fila label="Ganador" valor={'Equipo ' + form.ganador} />
-          <Fila label="Resultado" valor={form.resultado} />
+          <Fila label="Fecha" valor={formatearFechaLegible(fecha)} />
+          <Fila label="Hora" valor={bloqueDe(form.hora)} />
           {modoAdmin && <Fila label="Carga por administración" valor={form.motivo} />}
+
+          {/* El mismo marcador que llenó, en solo lectura: lo que confirma
+              se ve igual a lo que escribió, en vez de traducido a las filas
+              "Equipo A / Ganador / Resultado" que había antes. */}
+          <div className="pt-2">
+            <Marcador
+              readOnly
+              sets={form.sets}
+              labelA={etiquetasDe(form.equipoA)}
+              labelB={etiquetasDe(form.equipoB)}
+            />
+          </div>
+          {/* Sin frase "Gana X": el check y la negrita del marcador ya lo
+              dicen. La excepción es el ganador puesto a mano (partido
+              abandonado): ahí el marcador muestra sets repartidos y la
+              marca contradice lo que se ve, así que hay que explicar de
+              dónde salió. */}
+          {ganadorDe(form.sets) === null && (
+            <p className="pt-1 text-sm text-muted-foreground">
+              Sets repartidos: el ganador lo indicaste tú, no sale del marcador.
+            </p>
+          )}
 
           {confirmError && (
             <Alert variant="error">
@@ -250,10 +313,6 @@ export default function ResultadoPage() {
   const modo = ctx.modo;
   const labelEquipoA = form.equipoA.length === 2 ? etiquetasDe(form.equipoA) : 'Equipo A';
   const labelEquipoB = form.equipoB.length === 2 ? etiquetasDe(form.equipoB) : 'Equipo B';
-  // El backend usa el orden del marcador para pesar partidos contundentes
-  // (ver factorMargen_ en Elo.js): siempre van primero los juegos del
-  // equipo que ganó el partido, set por set.
-  const labelGanador = form.ganador === 'A' ? labelEquipoA : labelEquipoB;
 
   return (
     <div className="relative min-h-svh">
@@ -407,41 +466,48 @@ export default function ResultadoPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>¿Qué equipo ganó?</Label>
-                {/* variant="default" + gap-2.5: dos píldoras SEPARADAS con
-                    espacio, en vez del control segmentado pegado (que con el
-                    radio pill quedaba como "cápsula torcida"). Cada ítem lleva
-                    su propio borde; seleccionado = inversión oscura. */}
-                <ToggleGroup
-                  aria-label="Ganador"
-                  variant="default"
-                  size="lg"
-                  orientation="vertical"
-                  className="w-full flex-col gap-2.5"
-                  value={[form.ganador]}
-                  onValueChange={(vals) => vals.length && actualizar('ganador', vals[0])}
-                >
-                  {/* h-auto + whitespace-normal: los nombres de una pareja
-                      pueden ser largos y el Toggle por defecto es nowrap */}
-                  <ToggleGroupItem
-                    value="A"
-                    className="h-auto min-h-11 w-full justify-start whitespace-normal border-input bg-card px-4 py-2.5 text-left data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background"
-                  >
-                    {labelEquipoA}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="B"
-                    className="h-auto min-h-11 w-full justify-start whitespace-normal border-input bg-card px-4 py-2.5 text-left data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background"
-                  >
-                    {labelEquipoB}
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                <Label>Marcador — los juegos de cada equipo, set por set</Label>
+                <Marcador
+                  sets={form.sets}
+                  onChange={(v) => actualizar('sets', v)}
+                  labelA={labelEquipoA}
+                  labelB={labelEquipoB}
+                />
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Resultado exacto — juegos de {labelGanador} primero en cada set (ej: 6-4, 6-3)</Label>
-                <ResultadoInput value={form.resultado} onChange={(v) => actualizar('resultado', v)} />
-              </div>
+              {pedirGanador && (
+                <div className="space-y-1.5">
+                  <Label>¿Qué equipo ganó?</Label>
+                  {/* variant="default" + gap-2.5: dos píldoras SEPARADAS con
+                      espacio, en vez del control segmentado pegado (que con el
+                      radio pill quedaba como "cápsula torcida"). Cada ítem lleva
+                      su propio borde; seleccionado = inversión oscura. */}
+                  <ToggleGroup
+                    aria-label="Ganador"
+                    variant="default"
+                    size="lg"
+                    orientation="vertical"
+                    className="w-full flex-col gap-2.5"
+                    value={form.ganadorManual ? [form.ganadorManual] : []}
+                    onValueChange={(vals) => vals.length && actualizar('ganadorManual', vals[0])}
+                  >
+                    {/* h-auto + whitespace-normal: los nombres de una pareja
+                        pueden ser largos y el Toggle por defecto es nowrap */}
+                    <ToggleGroupItem
+                      value="A"
+                      className="h-auto min-h-11 w-full justify-start whitespace-normal border-input bg-card px-4 py-2.5 text-left data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background"
+                    >
+                      {labelEquipoA}
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="B"
+                      className="h-auto min-h-11 w-full justify-start whitespace-normal border-input bg-card px-4 py-2.5 text-left data-pressed:border-foreground data-pressed:bg-foreground data-pressed:text-background"
+                    >
+                      {labelEquipoB}
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              )}
 
               {formError && (
                 <Alert variant="error">
@@ -512,27 +578,8 @@ function Fila({ label, valor }) {
   );
 }
 
-// Los dos jugadores de un equipo van uno por línea en vez de unidos por
-// " / ": con nombres largos el separador quedaba en cualquier lado y un
-// nombre se cortaba al medio ("Leandro bravo" arriba, "(Leo)" abajo).
-// Siempre apilados, aunque entren en una línea, para que Equipo A y
-// Equipo B se lean igual.
-function FilaEquipo({ label, jugadores }) {
-  return (
-    <div className="flex justify-between gap-4 border-b py-1.5 text-sm">
-      <span className="shrink-0 text-muted-foreground">{label}</span>
-      <div className="min-w-0 text-right">
-        {jugadores.map((nombre, i) => (
-          <strong key={i} className="block break-words">
-            {nombre}
-          </strong>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Misma idea que FilaEquipo, pero acá los nombres son la etiqueta y el
+// Los dos jugadores van uno por línea, y acá los nombres son la
+// etiqueta y el
 // puntaje el valor: el delta no se comprime nunca y queda centrado
 // contra el bloque de nombres.
 function FilaDelta({ jugadores, delta }) {

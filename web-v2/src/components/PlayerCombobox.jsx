@@ -24,6 +24,16 @@ import {
  * `etiqueta` es lo único que se muestra -- normalmente el nombre, y el
  * nombre más la categoría si justo hay otro jugador con el mismo nombre.
  */
+// base-ui borra la selección a propósito cuando Escape llega con la lista
+// ya cerrada (ver el bloque `!mounted && event.key === 'Escape'` en
+// combobox/input/ComboboxInput.js): deja el combobox en cero. Acá eso está
+// mal: Escape es el reflejo para cerrar un desplegable, no para deshacer, y
+// quien lo apriete pierde un jugador que ya había buscado -- con los otros
+// tres esperando al lado de la cancha. Ignoramos ese cambio puntual por su
+// `reason` y dejamos que Escape siga cerrando el popup y limpiando lo
+// tecleado, que sí es lo esperable.
+const ESCAPE = 'escape-key';
+
 export function PlayerCombobox({
   players,
   value,
@@ -71,7 +81,8 @@ export function PlayerCombobox({
         value={values}
         open={open}
         onOpenChange={setOpen}
-        onValueChange={(nuevo) => {
+        onValueChange={(nuevo, detalles) => {
+          if (detalles?.reason === ESCAPE) return;
           if (nuevo.length <= max) onChange(nuevo.map((v) => v.value));
           if (nuevo.length >= max) setOpen(false);
         }}
@@ -122,7 +133,10 @@ export function PlayerCombobox({
     <Combobox
       items={items}
       value={selected}
-      onValueChange={(nuevo) => onChange(nuevo ? nuevo.value : '')}
+      onValueChange={(nuevo, detalles) => {
+        if (detalles?.reason === ESCAPE) return;
+        onChange(nuevo ? nuevo.value : '');
+      }}
     >
       <ComboboxInput placeholder={placeholder} size="lg" />
       <ComboboxPopup>
