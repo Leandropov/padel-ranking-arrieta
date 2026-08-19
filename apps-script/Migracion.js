@@ -346,3 +346,41 @@ function cerrarFormularioViejo_(urlDeEdicion) {
   );
   Logger.log('Formulario cerrado: ' + form.getTitle());
 }
+
+/**
+ * Agrega a una planilla YA instalada la fila de configuración del tope de
+ * reparto por valoración. Setup.js la escribe en las instalaciones
+ * nuevas, pero las que ya existen no la tienen y sin ella el reparto
+ * queda inerte (mitad y mitad para los dos compañeros).
+ *
+ * La ubica justo debajo de la fila de confiabilidad en vez de en un
+ * número de fila fijo, porque getConfig_ busca por etiqueta y el club
+ * puede haber movido cosas. Correr a mano una sola vez; si la fila ya
+ * está, no hace nada.
+ */
+function agregarTopeDeReparto() {
+  const sheet = getSpreadsheet_().getSheetByName(SHEET_CATEGORIAS);
+  const etiquetas = sheet.getRange(1, 1, sheet.getLastRow(), 1).getValues();
+
+  const yaEsta = etiquetas.some(([e]) => String(e).toLowerCase().includes('tope del reparto'));
+  if (yaEsta) {
+    Logger.log('La fila "Tope del reparto" YA existe. No se tocó nada.');
+    return;
+  }
+
+  const filaConfiabilidad = etiquetas.findIndex(([e]) =>
+    String(e).toLowerCase().includes('confiabilidad')
+  );
+  if (filaConfiabilidad === -1) {
+    Logger.log('No encontré la fila de confiabilidad para ubicarme. No se tocó nada.');
+    return;
+  }
+
+  const destino = filaConfiabilidad + 2; // findIndex es 0-based; +1 fila, +1 para ir debajo
+  sheet.insertRowAfter(filaConfiabilidad + 1);
+  sheet
+    .getRange(destino, 1, 1, 2)
+    .setValues([['Tope del reparto por valoración (0.7 = 70/30, vacío lo desactiva)', 0.7]]);
+
+  Logger.log('Fila "Tope del reparto por valoración" agregada en la fila ' + destino + ' con valor 0.7.');
+}

@@ -105,3 +105,21 @@ export function registrarJugador({ nombre, categoria }) {
     body: JSON.stringify({ tipo: 'registro', nombre, categoria }),
   });
 }
+
+/**
+ * Guarda cómo los rivales repartieron los puntos de un partido que ya se
+ * cargó. Va como envío aparte y no dentro de submitResultado a propósito:
+ * el partido tiene que quedar guardado antes de que nadie valore, así una
+ * valoración a medias nunca puede costar un partido.
+ *
+ * `valoraciones` son los puntos que recibió cada jugador: {a1, a2, b1,
+ * b2}. Cada pareja la valora una persona de la pareja contraria
+ * repartiendo 6 puntos, así que cada par suma 6 -- o 0 si esa pareja se
+ * quedó sin valorar, y entonces se reparte mitad y mitad.
+ */
+export function enviarValoracion({ fecha, cancha, hora, quienEres, valoraciones }) {
+  return llamar(null, {
+    method: 'POST',
+    body: JSON.stringify({ tipo: 'valoracion', fecha, cancha, hora, quienEres, valoraciones }),
+  });
+}

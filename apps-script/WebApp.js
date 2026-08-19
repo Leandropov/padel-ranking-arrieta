@@ -25,8 +25,10 @@
  * de Apps Script, un solo query param decide qué devolver.
  *
  * doPost() rutea por payload.tipo: 'registro' da de alta un jugador
- * (ver registrarJugador_ en Jugadores.js), y cualquier otra cosa se
- * trata como la carga de un resultado. El default es el resultado a
+ * (ver registrarJugador_ en Jugadores.js), 'valoracion' guarda cómo los
+ * rivales repartieron los puntos de un partido ya cargado (ver
+ * guardarValoracion_), y cualquier otra cosa se trata como la carga de
+ * un resultado. El default es el resultado a
  * propósito: durante una ventana de despliegue puede quedar una versión
  * vieja del frontend mandando resultados sin declarar el tipo.
  *
@@ -45,6 +47,7 @@ function doPost(e) {
     safeRun_(function () {
       const payload = JSON.parse(e.postData.contents);
       if (payload && payload.tipo === 'registro') return registrarJugador_(payload);
+      if (payload && payload.tipo === 'valoracion') return guardarValoracion_(payload);
       return submitResultado(payload);
     })
   );
@@ -236,8 +239,8 @@ function submitResultado(payload) {
     invalidarCacheRanking_();
 
     return {
-      deltaA: Math.round(deltaA * 10) / 10,
-      deltaB: Math.round(deltaB * 10) / 10,
+      deltaA: redondearDelta_(deltaA),
+      deltaB: redondearDelta_(deltaB),
       equipoA: [mapaJugadores[a1].nombre, mapaJugadores[a2].nombre],
       equipoB: [mapaJugadores[b1].nombre, mapaJugadores[b2].nombre],
     };
@@ -337,4 +340,143 @@ function contarPartidosJugados_(historialSheet, ids) {
     });
   }
   return ids.map((id) => conteo[id] || 0);
+}
+
+/**
+ * Guarda la valoración de los rivales sobre un partido YA cargado, y
+ * recalcula con ella cómo se reparte entre los dos compañeros lo que le
+ * tocó a cada pareja.
+ *
+ * Va aparte del envío del resultado a propósito: el partido tiene que
+ * quedar guardado antes de que nadie valore. Si la valoración fuese parte
+ * del mismo envío, un partido podría perderse porque el rival se fue y
+ * quien cargaba se quedó trabado en una pantalla. La valoración es
+ * opcional; sin ella el reparto es mitad y mitad, igual que siempre.
+ *
+ * Se puede llamar más de una vez sobre el mismo partido: pisa lo
+ * anterior. Quien llama tiene que ser uno de los 4 del partido, la misma
+ * regla que para cargar el resultado.
+ *
+ * `payload.valoraciones` son los puntos que recibió cada jugador:
+ * {a1, a2, b1, b2}. Cada pareja la valora UNA persona de la pareja
+ * contraria repartiendo 6 puntos, así que cada par suma 6 (o 0 si esa
+ * pareja no fue valorada).
+ */
+function guardarValoracion_(payload) {
+  const config = getConfig_();
+  const historialSheet = getSpreadsheet_().getSheetByName(SHEET_HISTORIAL);
+  const val = payload.valoraciones || {};
+
+  const a1 = numeroValoracion_(val.a1);
+  const a2 = numeroValoracion_(val.a2);
+  const b1 = numeroValoracion_(val.b1);
+  const b2 = numeroValoracion_(val.b2);
+  if (a1 + a2 !== 0 && a1 + a2 !== PUNTOS_VALORACION) {
+    throw new Error('La valoración de la pareja A tiene que repartir ' + PUNTOS_VALORACION + ' puntos exactos.');
+  }
+  if (b1 + b2 !== 0 && b1 + b2 !== PUNTOS_VALORACION) {
+    throw new Error('La valoración de la pareja B tiene que repartir ' + PUNTOS_VALORACION + ' puntos exactos.');
+  }
+
+  // Mismo candado que al cargar un resultado: dos valoraciones a la vez
+  // sobre el mismo partido podrían leer el delta base y escribir encima
+  // una de la otra.
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const fila = buscarFilaPartido_(historialSheet, payload.fecha, payload.cancha, payload.hora);
+    if (!fila) {
+      throw new Error('No encontramos ese partido para valorarlo. Recarga la página e inténtalo de nuevo.');
+    }
+
+    // E..H son los 4 jugadores; K y L el delta base por jugador, el que
+    // salió del Elo antes de repartir. Se recalcula SIEMPRE desde ese
+    // delta base y no desde U..X, para que revalorar no acumule.
+    const datos = historialSheet.getRange(fila, 5, 1, 8).getValues()[0]; // E..L
+    const jugadores = [datos[0], datos[1], datos[2], datos[3]];
+    const deltaBaseA = Number(datos[6]);
+    const deltaBaseB = Number(datos[7]);
+
+    if (!payload.quienEres || jugadores.indexOf(payload.quienEres) === -1) {
+      throw new Error('Solo los jugadores de ese partido pueden valorarlo.');
+    }
+
+    const [deltaA1, deltaA2] = repartirDelta_(
+      deltaBaseA,
+      repartoPorValoracion_(a1, a2, config.topeReparto)
+    );
+    const [deltaB1, deltaB2] = repartirDelta_(
+      deltaBaseB,
+      repartoPorValoracion_(b1, b2, config.topeReparto)
+    );
+
+    historialSheet
+      .getRange(fila, COL_HISTORIAL_VAL_A1, 1, 8)
+      .setValues([[a1, a2, b1, b2, deltaA1, deltaA2, deltaB1, deltaB2]]);
+
+    SpreadsheetApp.flush();
+    invalidarCacheRanking_();
+
+    // leerJugadores_ devuelve un array; acá hace falta buscar por id.
+    const porId = {};
+    leerJugadores_(getSpreadsheet_().getSheetByName(SHEET_JUGADORES)).forEach((j) => {
+      porId[j.id] = j;
+    });
+    const nombre = (id) => (porId[id] ? porId[id].nombre : id);
+    return {
+      jugadores: [
+        { nombre: nombre(jugadores[0]), delta: redondearDelta_(deltaA1) },
+        { nombre: nombre(jugadores[1]), delta: redondearDelta_(deltaA2) },
+        { nombre: nombre(jugadores[2]), delta: redondearDelta_(deltaB1) },
+        { nombre: nombre(jugadores[3]), delta: redondearDelta_(deltaB2) },
+      ],
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Los puntos que reparte cada persona al valorar a la pareja rival. */
+const PUNTOS_VALORACION = 6;
+
+function numeroValoracion_(v) {
+  const n = Math.round(Number(v) || 0);
+  if (n < 0 || n > PUNTOS_VALORACION) {
+    throw new Error('Cada valoración va de 0 a ' + PUNTOS_VALORACION + '.');
+  }
+  return n;
+}
+
+/**
+ * Dos decimales, no uno. Con un decimal, un partido entre parejas de
+ * nivel muy distinto mueve tan poco que los cuatro jugadores salían con
+ * el mismo ±0.1 en pantalla aunque el reparto por valoración hubiera sido
+ * 70/30 -- la diferencia desaparecía justo en la pantalla que existe para
+ * mostrarla.
+ */
+function redondearDelta_(n) {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Número de fila del partido identificado por fecha + cancha + hora, o
+ * null. Es la misma clave con la que se detectan los duplicados, así que
+ * identifica un partido de forma única.
+ */
+function buscarFilaPartido_(historialSheet, fecha, cancha, hora) {
+  const lastRow = historialSheet.getLastRow();
+  if (lastRow < 2) return null;
+  const values = historialSheet.getRange(2, 2, lastRow - 1, 3).getValues();
+  const zona = Session.getScriptTimeZone();
+  for (let i = 0; i < values.length; i++) {
+    const [fechaFila, canchaFila, horaFila] = values[i];
+    const fechaStr =
+      fechaFila instanceof Date ? Utilities.formatDate(fechaFila, zona, 'yyyy-MM-dd') : String(fechaFila);
+    const horaStr =
+      horaFila instanceof Date ? Utilities.formatDate(horaFila, zona, 'HH:mm') : String(horaFila);
+    if (fechaStr === String(fecha) && String(canchaFila) === String(cancha) && horaStr === String(hora)) {
+      return i + 2;
+    }
+  }
+  return null;
 }

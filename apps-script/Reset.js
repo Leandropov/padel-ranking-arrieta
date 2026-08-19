@@ -132,3 +132,15 @@ function borrarPruebasDel17DeAgosto() {
     { fecha: '2026-08-17', cancha: 'Cancha 4', hora: '19:00' },
   ]);
 }
+
+/**
+ * Los dos partidos de prueba del 2026-08-18, cargados para verificar el
+ * reparto por valoración de punta a punta (uno por API, otro desde la
+ * pantalla). Movieron el puntaje de 8 jugadores reales. Correr una vez.
+ */
+function borrarPruebasDel18DeAgosto() {
+  borrarPartidos_([
+    { fecha: '2026-08-18', cancha: 'Cancha 5', hora: '10:00' },
+    { fecha: '2026-08-18', cancha: 'Cancha 3', hora: '22:00' },
+  ]);
+}

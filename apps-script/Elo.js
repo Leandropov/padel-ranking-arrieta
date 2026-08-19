@@ -124,3 +124,56 @@ function factorConfiabilidad_(partidosJugados, partidosReferencia, pesoConfiabil
   const acotada = Math.max(-1, Math.min(1, proporcion));
   return 1 + pesoConfiabilidad * acotada;
 }
+
+/**
+ * Qué porción del total de la pareja le toca al PRIMER jugador, según lo
+ * que los rivales valoraron a cada uno.
+ *
+ * Los dos compañeros se reparten un total fijo (el que ya decidió el
+ * Elo), así que esto no crea ni destruye puntos: solo mueve la línea de
+ * corte. Por eso la valoración la hacen los rivales y nunca el propio
+ * compañero -- si opinaras sobre este reparto estarías opinando sobre tu
+ * propio puntaje, y a todos les convendría darle cero al de al lado.
+ *
+ * `tope` es hasta dónde puede llegar el corte (0.7 = 70/30). Se COMPRIME
+ * la desviación en vez de recortarla: si se recortara de golpe, un 5-1 y
+ * un 6-0 darían exactamente lo mismo y no tendría sentido ofrecer las dos
+ * opciones. Con compresión, cada voto da un resultado distinto y el más
+ * extremo aterriza justo en el tope.
+ *
+ * Devuelve 0.5 (mitad y mitad, como antes de la valoración) si nadie
+ * valoró a esa pareja o si el tope está sin configurar.
+ */
+function repartoPorValoracion_(valUno, valOtro, tope) {
+  if (!tope || tope <= 0.5) return 0.5;
+  const uno = Number(valUno) || 0;
+  const otro = Number(valOtro) || 0;
+  const total = uno + otro;
+  if (total <= 0) return 0.5;
+
+  const crudo = uno / total;
+  const peso = 2 * (Math.min(tope, 1) - 0.5); // tope 0.7 -> peso 0.4
+  const parte = 0.5 + peso * (crudo - 0.5);
+  // Red de seguridad: con tope <= 1 la compresión ya no puede pasarse,
+  // pero si alguien escribe 1.5 en la planilla esto evita un reparto
+  // fuera de rango.
+  return Math.max(1 - tope, Math.min(tope, parte));
+}
+
+/**
+ * Reparte entre los dos compañeros lo que le tocó a la pareja.
+ *
+ * `deltaPareja` es lo que hasta ahora recibía CADA uno de los dos, así
+ * que el total en juego es el doble. `porcionDelPrimero` sale de
+ * repartoPorValoracion_.
+ *
+ * Ojo con el signo: ganar más y perder menos son la misma cosa, moverse
+ * hacia arriba. Si la pareja ganó, la porción grande de un total positivo
+ * va al que jugó mejor. Si perdió, ese total es negativo y la porción
+ * grande es el castigo, así que al que jugó mejor le toca la CHICA.
+ */
+function repartirDelta_(deltaPareja, porcionDelPrimero) {
+  const total = deltaPareja * 2;
+  const porcion = deltaPareja >= 0 ? porcionDelPrimero : 1 - porcionDelPrimero;
+  return [total * porcion, total * (1 - porcion)];
+}

@@ -62,6 +62,7 @@ const CONFIG_ROW_VENTANA_DETECCION = 16;
 const CONFIG_ROW_PIN_ADMIN = 17;
 const CONFIG_ROW_PESO_MARGEN = 18;
 const CONFIG_ROW_PESO_CONFIABILIDAD = 19;
+const CONFIG_ROW_TOPE_REPARTO = 20;
 
 function getSpreadsheet_() {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
@@ -165,6 +166,11 @@ function getConfig_() {
   // alimenta factorConfiabilidad_.
   const partidosReferencia = Number(buscar_('partidos de referencia'));
   const pesoConfiabilidad = Number(buscar_('confiabilidad'));
+  // Hasta dónde puede torcer el reparto la valoración de los rivales.
+  // 0.7 = 70/30 (el que jugó mejor se lleva como mucho el 70% de lo que
+  // ganó la pareja). Vacío o <= 0.5 lo deja inerte: mitad y mitad para
+  // los dos compañeros, que es como funcionaba antes de la valoración.
+  const topeReparto = Number(buscar_('tope del reparto'));
   return {
     K,
     D,
@@ -177,6 +183,7 @@ function getConfig_() {
     pesoMargen,
     partidosReferencia,
     pesoConfiabilidad,
+    topeReparto,
   };
 }
 
