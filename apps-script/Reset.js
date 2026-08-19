@@ -37,3 +37,98 @@ function limpiarFilas_(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
 }
+
+/**
+ * Borra partidos puntuales del Historial por su clave (fecha + cancha +
+ * hora), que es la misma combinación con la que submitResultado detecta
+ * duplicados y por lo tanto identifica un partido de forma única.
+ *
+ * Para qué: durante las pruebas quedan partidos inventados en el
+ * Historial real que movieron el puntaje de gente de verdad. Borrarlos a
+ * mano en la planilla funciona, pero es fácil equivocarse de fila -- acá
+ * se nombra el partido y el script encuentra la fila.
+ *
+ * No hay que recalcular nada después: los puntajes de Jugadores son
+ * fórmulas que suman el Historial, así que al desaparecer la fila se
+ * corrigen solos.
+ *
+ * Correr a mano desde el editor. Ejemplo:
+ *
+ *   borrarPartidos_([
+ *     { fecha: '2026-08-17', cancha: 'Cancha 4', hora: '20:30' },
+ *   ]);
+ *
+ * Se borran de abajo hacia arriba para que los índices de las filas que
+ * todavía no se borraron no se corran en el medio.
+ */
+function borrarPartidos_(claves) {
+  if (!claves || !claves.length) {
+    Logger.log('Pasale una lista de partidos: [{fecha, cancha, hora}, ...]');
+    return;
+  }
+
+  const sheet = getSpreadsheet_().getSheetByName(SHEET_HISTORIAL);
+  const ultimaFila = sheet.getLastRow();
+  if (ultimaFila < 2) {
+    Logger.log('El Historial está vacío.');
+    return;
+  }
+
+  // B=fecha, C=cancha, D=hora. La fecha puede venir como Date o como
+  // texto según cómo se haya cargado la fila, así que se normaliza.
+  const filas = sheet.getRange(2, 2, ultimaFila - 1, 3).getValues();
+  const zona = Session.getScriptTimeZone();
+  const normFecha = (v) =>
+    v instanceof Date ? Utilities.formatDate(v, zona, 'yyyy-MM-dd') : String(v).trim();
+  const normHora = (v) =>
+    v instanceof Date ? Utilities.formatDate(v, zona, 'HH:mm') : String(v).trim();
+
+  const aBorrar = [];
+  claves.forEach((clave) => {
+    let encontrada = false;
+    filas.forEach((fila, i) => {
+      if (
+        normFecha(fila[0]) === String(clave.fecha).trim() &&
+        String(fila[1]).trim() === String(clave.cancha).trim() &&
+        normHora(fila[2]) === String(clave.hora).trim()
+      ) {
+        aBorrar.push(i + 2);
+        encontrada = true;
+      }
+    });
+    if (!encontrada) {
+      Logger.log(
+        'NO ENCONTRADO: ' + clave.fecha + ' ' + clave.cancha + ' ' + clave.hora + '. No se borró nada por esta clave.'
+      );
+    }
+  });
+
+  if (!aBorrar.length) {
+    Logger.log('No se borró ninguna fila.');
+    return;
+  }
+
+  aBorrar
+    .sort((a, b) => b - a)
+    .forEach((fila) => {
+      Logger.log('Borrando fila ' + fila + ' del Historial.');
+      sheet.deleteRow(fila);
+    });
+
+  SpreadsheetApp.flush();
+  invalidarCacheRanking_();
+  Logger.log(aBorrar.length + ' fila(s) borrada(s). Los puntajes ya se recalcularon solos.');
+}
+
+/**
+ * Los dos partidos de prueba que quedaron cargados el 2026-08-17 mientras
+ * se probaba el marcador nuevo contra producción. Movieron el puntaje de
+ * 7 jugadores reales. Correr una vez y después se puede borrar esta
+ * función.
+ */
+function borrarPruebasDel17DeAgosto() {
+  borrarPartidos_([
+    { fecha: '2026-08-17', cancha: 'Cancha 4', hora: '20:30' },
+    { fecha: '2026-08-17', cancha: 'Cancha 4', hora: '19:00' },
+  ]);
+}
