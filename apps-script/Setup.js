@@ -83,10 +83,15 @@ function setupCategorias_(ss) {
     .setValues([
       ['Peso de confiabilidad para debutantes y veteranos (0 desactiva esto, ej. 0.3)', 0.3],
     ]);
-  categorias
+  sheet
     .getRange(CONFIG_ROW_TOPE_REPARTO, 1, 1, 2)
     .setValues([
       ['Tope del reparto por valoración (0.7 = 70/30, vacío lo desactiva)', 0.7],
+    ]);
+  sheet
+    .getRange(CONFIG_ROW_MARGEN_CATEGORIA, 1, 1, 2)
+    .setValues([
+      ['Margen para cambiar de categoría (en puntos, 0 lo desactiva)', 2],
     ]);
   sheet.autoResizeColumns(1, 3);
   sheet.setColumnWidth(1, 320);
@@ -97,11 +102,20 @@ function setupJugadores_(ss) {
   // El ID va primero y es la identidad real del jugador: el Historial
   // guarda IDs, no nombres. Ver Jugadores.js para el porqué.
   sheet
-    .getRange('A1:E1')
-    .setValues([['ID', 'Nombre completo', 'Categoría declarada', 'Puntaje inicial', 'Puntaje actual']])
+    .getRange('A1:F1')
+    .setValues([
+      [
+        'ID',
+        'Nombre completo',
+        'Categoría declarada',
+        'Puntaje inicial',
+        'Puntaje actual',
+        'Categoría vigente',
+      ],
+    ])
     .setFontWeight('bold');
   sheet.setFrozenRows(1);
-  sheet.autoResizeColumns(1, 5);
+  sheet.autoResizeColumns(1, 6);
 }
 
 function setupRanking_(ss) {

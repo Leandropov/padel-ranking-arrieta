@@ -11,6 +11,15 @@ function getRanking() {
   const ss = getSpreadsheet_();
   const rankingSheet = ss.getSheetByName(SHEET_RANKING);
   const historialSheet = ss.getSheetByName(SHEET_HISTORIAL);
+  // La pestaña Ranking son fórmulas sobre Jugadores A:E y no arrastra la
+  // columna F, así que la categoría vigente se lee de Jugadores. Se
+  // prefiere esto a tocar la fórmula QUERY de la pestaña Ranking, que es
+  // frágil (el SORT apunta a una columna por número).
+  const vigentePorId = {};
+  leerJugadores_(ss.getSheetByName(SHEET_JUGADORES)).forEach((j) => {
+    vigentePorId[j.id] = j.categoriaVigente;
+  });
+  const margenCategoria = getConfig_().margenCategoria;
 
   // Ranking: A=ID, B=Nombre, C=Categoría declarada, D=Puntaje actual, E=Puesto.
   const lastRow = rankingSheet.getLastRow();
@@ -28,11 +37,20 @@ function getRanking() {
         puesto: Number(puesto),
         id: String(id).trim(),
         nombre: String(nombre).trim(),
-        // La categoría se recalcula por puntaje actual, no por la que se
-        // declaró al registrarse (columna C de Jugadores) -- así alguien
-        // que subió o bajó de rango aparece solo en la pestaña que le
-        // corresponde hoy, sin que nadie tenga que reasignarla a mano.
-        categoria: categoriaPorPuntaje_(puntaje, rangos),
+        // La categoría no sale de la que se declaró al registrarse
+        // (columna C) sino del puntaje de hoy, así alguien que subió o
+        // bajó aparece solo en la pestaña que le corresponde, sin que
+        // nadie lo reasigne a mano. La guardada es el punto de partida
+        // de la histéresis; si falta (jugador anterior a la columna F),
+        // se cae al cálculo de siempre. Se aplica la misma función que
+        // al guardar un partido, así lo que se muestra y lo que se
+        // persiste no pueden discrepar.
+        categoria: categoriaConHisteresis_(
+          puntaje,
+          vigentePorId[String(id).trim()] || categoriaPorPuntaje_(puntaje, rangos),
+          rangos,
+          margenCategoria
+        ),
         puntaje: puntaje,
         deltaUltimoPartido: ultimo ? Math.round(ultimo.delta * 10) / 10 : null,
         fechaUltimoPartido: ultimo ? ultimo.fecha : null,
@@ -139,6 +157,42 @@ function categoriaPorPuntaje_(puntaje, rangos) {
     if (puntaje >= rango.min) elegida = rango;
   }
   return elegida.nombre;
+}
+
+/**
+ * La categoría de alguien teniendo en cuenta en cuál estaba antes.
+ *
+ * Sin esto, la categoría es una función del puntaje y nada más, así que
+ * quien queda parado justo sobre una frontera rebota entre dos
+ * categorías partido por medio: pierde y baja, gana y sube, y cada
+ * cambio le llega como la noticia de que subió o bajó de nivel. Con el
+ * margen puesto, la frontera deja de ser una raya y pasa a ser una
+ * banda: para subir hay que superar el piso de la categoría de arriba
+ * POR el margen, y para bajar hay que quedar debajo del piso propio por
+ * el mismo margen. Adentro de la banda no pasa nada.
+ *
+ * Esto es lo que hace que la categoría necesite memoria (columna F de
+ * Jugadores): con el mismo puntaje, quien venía de arriba y quien venía
+ * de abajo pueden quedar en categorías distintas, y eso es lo correcto
+ * -- es justamente lo que evita el rebote.
+ *
+ * Con margen 0, vacío, o sin categoría anterior conocida, se comporta
+ * exactamente como categoriaPorPuntaje_.
+ *
+ * @param margen en puntos, leído de la pestaña Categorías
+ */
+function categoriaConHisteresis_(puntaje, categoriaAnterior, rangos, margen) {
+  if (!margen || margen <= 0) return categoriaPorPuntaje_(puntaje, rangos);
+  const ordenados = [...rangos].sort((a, b) => a.min - b.min);
+  const buscada = normalizarNombreCategoria_(categoriaAnterior);
+  let i = ordenados.findIndex((r) => normalizarNombreCategoria_(r.nombre) === buscada);
+  if (i === -1) return categoriaPorPuntaje_(puntaje, rangos);
+  // Los while (y no un if) son para el caso raro de un salto de más de
+  // una categoría: pasa si el admin corrige el Historial a mano y el
+  // puntaje se mueve mucho de golpe.
+  while (i < ordenados.length - 1 && puntaje >= ordenados[i + 1].min + margen) i++;
+  while (i > 0 && puntaje < ordenados[i].min - margen) i--;
+  return ordenados[i].nombre;
 }
 
 /**

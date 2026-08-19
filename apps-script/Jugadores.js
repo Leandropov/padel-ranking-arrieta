@@ -53,21 +53,35 @@ function limpiarNombre_(texto) {
 }
 
 /**
- * Todos los jugadores como lista de {id, nombre, categoria, puntaje},
- * en el orden en que están en la planilla. Una sola lectura agrupada.
+ * Todos los jugadores como lista de
+ * {id, nombre, categoria, puntaje, categoriaVigente}, en el orden en que
+ * están en la planilla. Una sola lectura agrupada.
+ *
+ * `categoria` es la que la persona declaró al registrarse y no cambia
+ * nunca; `categoriaVigente` (columna F) es en la que está hoy, y la
+ * escribe el backend cuando un partido la hace cruzar una frontera. Son
+ * dos cosas distintas a propósito: la declarada sirve para fijar el
+ * puntaje inicial, la vigente es la que el ranking muestra.
+ *
+ * La columna F puede no existir todavía (planillas anteriores a la
+ * histéresis), así que se lee lo que haya y se completa con ''. Quien
+ * lea eso debe caer a categoriaPorPuntaje_, que es el comportamiento de
+ * siempre.
  */
 function leerJugadores_(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
+  const columnas = Math.min(COL_JUGADORES_CATEGORIA_VIGENTE, sheet.getMaxColumns());
   return sheet
-    .getRange(2, 1, lastRow - 1, 5)
+    .getRange(2, 1, lastRow - 1, columnas)
     .getValues()
     .filter((row) => row[0] && row[1])
-    .map(([id, nombre, categoria, , puntaje]) => ({
-      id: String(id).trim(),
-      nombre: String(nombre).trim(),
-      categoria: String(categoria).trim(),
-      puntaje: Number(puntaje),
+    .map((row) => ({
+      id: String(row[0]).trim(),
+      nombre: String(row[1]).trim(),
+      categoria: String(row[2]).trim(),
+      puntaje: Number(row[4]),
+      categoriaVigente: String(row[5] || '').trim(),
     }));
 }
 
@@ -160,12 +174,50 @@ function formulaNombresHistorial_(fila) {
   );
 }
 
-/** Escribe (o reescribe) la fila de un jugador con su fórmula de puntaje. */
+/**
+ * Escribe (o reescribe) la fila de un jugador con su fórmula de puntaje.
+ *
+ * La categoría vigente arranca igual a la declarada: el puntaje inicial
+ * es el medio de ese rango, así que al registrarse la persona está,
+ * por construcción, dentro de la categoría que declaró.
+ */
 function escribirFilaJugador_(sheet, fila, jugador) {
   sheet
     .getRange(fila, 1, 1, 4)
     .setValues([[jugador.id, jugador.nombre, jugador.categoria, jugador.puntajeInicial]]);
   sheet.getRange(fila, 5).setFormula(formulaPuntajeActual_(fila));
+  sheet.getRange(fila, COL_JUGADORES_CATEGORIA_VIGENTE).setValue(jugador.categoria);
+}
+
+/**
+ * Recalcula y guarda la categoría vigente de los jugadores cuyo puntaje
+ * acaba de moverse. Se llama después de un SpreadsheetApp.flush(), para
+ * que la columna E (una fórmula) ya tenga el puntaje nuevo.
+ *
+ * Lee el rango sin filtrar filas vacías a propósito: hace falta el
+ * número de fila real de cada jugador para escribirle la celda, y
+ * leerJugadores_ descarta filas y desalinea los índices.
+ *
+ * Escribe también cuando el margen está en 0 (histéresis desactivada):
+ * así la columna se mantiene al día y el día que el club active el
+ * margen, la histéresis arranca desde un estado correcto.
+ */
+function actualizarCategoriaVigente_(sheet, ids, rangos, margen) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const columnas = Math.min(COL_JUGADORES_CATEGORIA_VIGENTE, sheet.getMaxColumns());
+  const filas = sheet.getRange(2, 1, lastRow - 1, columnas).getValues();
+  filas.forEach((row, i) => {
+    const id = String(row[0] || '').trim();
+    if (!id || ids.indexOf(id) === -1) return;
+    const puntaje = Number(row[4]);
+    const guardada = String(row[5] || '').trim();
+    const anterior = guardada || categoriaPorPuntaje_(puntaje, rangos);
+    const nueva = categoriaConHisteresis_(puntaje, anterior, rangos, margen);
+    if (nueva !== guardada) {
+      sheet.getRange(i + 2, COL_JUGADORES_CATEGORIA_VIGENTE).setValue(nueva);
+    }
+  });
 }
 
 /**

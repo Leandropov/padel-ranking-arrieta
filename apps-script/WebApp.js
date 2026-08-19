@@ -236,6 +236,20 @@ function submitResultado(payload) {
     // cacheado quedó viejo. El flush primero: ver invalidarCacheRanking_
     // en Ranking.js para por qué importa el orden.
     SpreadsheetApp.flush();
+    // Con los puntajes nuevos ya recalculados (la columna E de Jugadores
+    // es una fórmula, por eso hace falta el flush de arriba), se decide
+    // si alguno de los 4 cambió de categoría. Solo estos 4 pueden haber
+    // cambiado: el puntaje de un jugador es la suma de SUS deltas, así
+    // que nadie más se movió con este partido.
+    actualizarCategoriaVigente_(
+      jugadoresSheet,
+      [a1, a2, b1, b2],
+      getCategoryRanges_(),
+      config.margenCategoria
+    );
+    // Segundo flush: lo de arriba escribió celdas, y el cache se invalida
+    // después para que la primera lectura del ranking ya las vea.
+    SpreadsheetApp.flush();
     invalidarCacheRanking_();
 
     return {
@@ -414,6 +428,16 @@ function guardarValoracion_(payload) {
       .getRange(fila, COL_HISTORIAL_VAL_A1, 1, 8)
       .setValues([[a1, a2, b1, b2, deltaA1, deltaA2, deltaB1, deltaB2]]);
 
+    SpreadsheetApp.flush();
+    // La valoración reparte el delta distinto entre los dos compañeros,
+    // así que también puede cruzar a alguien de categoría -- no es solo
+    // cosa de cargar el resultado.
+    actualizarCategoriaVigente_(
+      getSpreadsheet_().getSheetByName(SHEET_JUGADORES),
+      jugadores.map((id) => String(id).trim()),
+      getCategoryRanges_(),
+      config.margenCategoria
+    );
     SpreadsheetApp.flush();
     invalidarCacheRanking_();
 

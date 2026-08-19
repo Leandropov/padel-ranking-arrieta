@@ -13,6 +13,13 @@ const SHEET_HISTORIAL = 'Historial';
 // que daba la pestaña de respuestas del Google Form. Ver Jugadores.js.
 const SHEET_REGISTROS = 'Registros';
 
+// Jugadores ocupa A..E (ID, Nombre, Categoría declarada, Puntaje inicial,
+// Puntaje actual). La F guarda la categoría en la que está HOY, que no es
+// la declarada ni se deduce sola del puntaje: con la histéresis puesta,
+// depende de en cuál estaba antes. Ver categoriaConHisteresis_ en
+// Ranking.js.
+const COL_JUGADORES_CATEGORIA_VIGENTE = 6;
+
 // Historial ocupa A..O (15 columnas de datos). La P es de solo lectura
 // para el humano que abre la planilla: traduce a nombres los IDs de las
 // columnas E..H. Ver formulaNombresHistorial_ en Jugadores.js.
@@ -63,6 +70,7 @@ const CONFIG_ROW_PIN_ADMIN = 17;
 const CONFIG_ROW_PESO_MARGEN = 18;
 const CONFIG_ROW_PESO_CONFIABILIDAD = 19;
 const CONFIG_ROW_TOPE_REPARTO = 20;
+const CONFIG_ROW_MARGEN_CATEGORIA = 21;
 
 function getSpreadsheet_() {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
@@ -171,6 +179,11 @@ function getConfig_() {
   // ganó la pareja). Vacío o <= 0.5 lo deja inerte: mitad y mitad para
   // los dos compañeros, que es como funcionaba antes de la valoración.
   const topeReparto = Number(buscar_('tope del reparto'));
+  // Cuánto hay que pasarse de la frontera para que el cambio de categoría
+  // se haga efectivo. Ver categoriaConHisteresis_ en Ranking.js. Vacío o 0
+  // deja el comportamiento de siempre (se cambia al cruzar la raya), así
+  // que no hace falta migrar planillas existentes para desplegar esto.
+  const margenCategoria = Number(buscar_('margen para cambiar'));
   return {
     K,
     D,
@@ -184,6 +197,7 @@ function getConfig_() {
     partidosReferencia,
     pesoConfiabilidad,
     topeReparto,
+    margenCategoria,
   };
 }
 

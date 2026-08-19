@@ -386,6 +386,103 @@ function agregarTopeDeReparto() {
 }
 
 /**
+ * Agrega a la pestaña Categorías la fila "Margen para cambiar de
+ * categoría", que es la que enciende la histéresis. Correr a mano una
+ * sola vez; si la fila ya está, no hace nada.
+ *
+ * Mismo criterio que agregarTopeDeReparto: se ubica debajo de la fila
+ * que ya existe en vez de en un número fijo, porque getConfig_ busca por
+ * etiqueta y el club puede haber movido cosas de lugar.
+ *
+ * El valor 2 es un punto de partida, no un número calibrado: son ~0,3
+ * del ancho de una categoría de 10 puntos, que es lo que se simuló.
+ */
+function agregarMargenDeCategoria() {
+  const sheet = getSpreadsheet_().getSheetByName(SHEET_CATEGORIAS);
+  const etiquetas = sheet.getRange(1, 1, sheet.getLastRow(), 1).getValues();
+
+  const yaEsta = etiquetas.some(([e]) => String(e).toLowerCase().includes('margen para cambiar'));
+  if (yaEsta) {
+    Logger.log('La fila "Margen para cambiar de categoría" YA existe. No se tocó nada.');
+    return;
+  }
+
+  const filaTope = etiquetas.findIndex(([e]) => String(e).toLowerCase().includes('tope del reparto'));
+  if (filaTope === -1) {
+    Logger.log('No encontré la fila del tope del reparto para ubicarme. No se tocó nada.');
+    return;
+  }
+
+  const destino = filaTope + 2; // findIndex es 0-based; +1 fila, +1 para ir debajo
+  sheet.insertRowAfter(filaTope + 1);
+  sheet
+    .getRange(destino, 1, 1, 2)
+    .setValues([['Margen para cambiar de categoría (en puntos, 0 lo desactiva)', 2]]);
+
+  Logger.log('Fila "Margen para cambiar de categoría" agregada en la fila ' + destino + ' con valor 2.');
+}
+
+/**
+ * Llena la columna F de Jugadores ("Categoría vigente") para los
+ * jugadores que ya estaban antes de que existiera la histéresis.
+ *
+ * Hasta ahora la categoría se deducía del puntaje cada vez que alguien
+ * abría el ranking, sin guardarse en ningún lado. La histéresis necesita
+ * saber en cuál estabas antes (ver categoriaConHisteresis_ en
+ * Ranking.js), así que hay que darle un punto de partida. El punto de
+ * partida correcto es la categoría que la app venía mostrando, o sea la
+ * que sale del puntaje a secas, sin margen.
+ *
+ * Es aditiva: escribe una columna que antes no existía y no toca ni
+ * puntajes ni Historial. Aun así saca respaldo, como el resto de las
+ * migraciones de este archivo.
+ *
+ * Correr a mano una sola vez, DESPUÉS de agregarMargenDeCategoria().
+ * Volver a correrla no rompe nada, pero pisa la categoría vigente de
+ * todos con la que salga del puntaje, y con eso se pierde la memoria de
+ * quién estaba adentro de la banda de histéresis.
+ */
+function migrarCategoriaVigente() {
+  const ss = getSpreadsheet_();
+  const sheet = ss.getSheetByName(SHEET_JUGADORES);
+  const rangos = getCategoryRanges_();
+
+  const respaldo = ss.copy(
+    ss.getName() +
+      ' (respaldo pre-categoría-vigente ' +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm') +
+      ')'
+  );
+  Logger.log('Respaldo creado: ' + respaldo.getUrl());
+
+  sheet.getRange(1, COL_JUGADORES_CATEGORIA_VIGENTE).setValue('Categoría vigente').setFontWeight('bold');
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    Logger.log('No hay jugadores todavía. Solo se escribió el encabezado.');
+    return;
+  }
+
+  const filas = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  const aEscribir = filas.map((row) => {
+    if (!row[0] || !row[1]) return [''];
+    return [categoriaPorPuntaje_(Number(row[4]), rangos)];
+  });
+  sheet
+    .getRange(2, COL_JUGADORES_CATEGORIA_VIGENTE, aEscribir.length, 1)
+    .setValues(aEscribir);
+  sheet.autoResizeColumns(COL_JUGADORES_CATEGORIA_VIGENTE, 1);
+
+  const cuenta = {};
+  aEscribir.forEach(([c]) => {
+    if (c) cuenta[c] = (cuenta[c] || 0) + 1;
+  });
+  Logger.log('Categoría vigente escrita para ' + aEscribir.filter(([c]) => c).length + ' jugadores.');
+  Logger.log('Reparto: ' + JSON.stringify(cuenta));
+  Logger.log('Respaldo: ' + respaldo.getUrl());
+}
+
+/**
  * Restaura Jugadores, Historial, Registros y las respuestas del formulario
  * viejo desde una copia de respaldo, y deja la planilla lista para el
  * esquema actual (delta por jugador en U..X).
