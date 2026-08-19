@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CircleCheckIcon } from 'lucide-react';
+import { Portada } from '@/components/Portada';
 
 /**
  * Alta de jugador. Reemplaza al Google Form que se usaba antes.
@@ -134,18 +135,7 @@ export default function RegistroPage() {
 
   return (
     <FlowShell>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 460 175"
-        preserveAspectRatio="xMidYMid slice"
-        className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
-      >
-        <rect width="460" height="175" fill="#16432c" />
-        <circle cx="150" cy="90" r="34" fill="none" stroke="#83e17e" strokeWidth="4" />
-        <circle cx="150" cy="90" r="9" fill="#83e17e" />
-        <circle cx="300" cy="60" r="22" fill="none" stroke="#83e17e" strokeWidth="4" opacity="0.5" />
-        <circle cx="340" cy="120" r="14" fill="none" stroke="#83e17e" strokeWidth="3" opacity="0.32" />
-      </svg>
+        <Portada />
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Regístrate en el ranking</CardTitle>
           <p className="text-base text-muted-foreground">

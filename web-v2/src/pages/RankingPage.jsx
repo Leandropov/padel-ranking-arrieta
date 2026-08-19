@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowDownIcon, ArrowUpIcon, SearchIcon, XIcon } from 'lucide-react';
+import { Portada } from '@/components/Portada';
 
 function redondear1_(n) {
   return Math.round(n * 10) / 10;
@@ -105,23 +106,7 @@ export default function RankingPage() {
 
   return (
     <FlowShell ancho="2xl">
-        {/* Cover verde bosque (#16432c) con la cancha en lima — el par
-            oscuro+lima de la referencia. */}
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 640 210"
-          preserveAspectRatio="xMidYMid slice"
-          className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
-        >
-          <rect width="640" height="210" fill="#16432c" />
-          <g stroke="#83e17e" strokeWidth="3" fill="none">
-            <rect x="40" y="30" width="560" height="150" rx="14" />
-            <line x1="320" y1="30" x2="320" y2="180" />
-            <line x1="150" y1="30" x2="150" y2="180" opacity="0.5" />
-            <line x1="490" y1="30" x2="490" y2="180" opacity="0.5" />
-          </g>
-          <circle cx="320" cy="105" r="6" fill="#83e17e" />
-        </svg>
+        <Portada />
         <CardHeader className="text-center">
           {/* Peso 700 con tracking apretado: la tipografía display pesada de
               Replicate (grotesca condensada), no la calma de Coinbase. */}

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { CircleCheckIcon, ClipboardCheckIcon, UsersIcon } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Portada } from '@/components/Portada';
 
 const vacio = {
   quienEres: '',
@@ -470,18 +471,7 @@ export default function ResultadoPage() {
   return (
     <div className="relative min-h-svh">
       <FlowShell>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 460 175"
-          preserveAspectRatio="xMidYMid slice"
-          className="aspect-[21/9] w-full rounded-t-[calc(var(--radius-2xl)-1px)]"
-        >
-          <rect width="460" height="175" fill="#16432c" />
-          <circle cx="150" cy="90" r="34" fill="none" stroke="#83e17e" strokeWidth="4" />
-          <circle cx="150" cy="90" r="9" fill="#83e17e" />
-          <circle cx="300" cy="60" r="22" fill="none" stroke="#83e17e" strokeWidth="4" opacity="0.5" />
-          <circle cx="340" cy="120" r="14" fill="none" stroke="#83e17e" strokeWidth="3" opacity="0.32" />
-        </svg>
+        <Portada />
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Anota el resultado de tu partido</CardTitle>
           <p className="text-base text-muted-foreground">Completa los datos del partido para actualizar el ranking.</p>
