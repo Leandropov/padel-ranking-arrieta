@@ -15,7 +15,23 @@
  * datos de prueba, pero NO corras esto con datos reales -- los IDs de
  * los partidos que queden en cualquier lado dejarían de apuntar a nadie.
  */
-function limpiarDatosDePrueba() {
+function limpiarDatosDePrueba(confirmacion) {
+  // Seguro. El 2026-08-18 esta función se corrió por error sobre la
+  // planilla real —está en el mismo archivo que los borrados puntuales y
+  // aparece primera en el desplegable— y se llevó los 17 jugadores y los
+  // 36 partidos. Como desde el desplegable se ejecuta SIN argumentos,
+  // ahora no hace nada salvo que se la llame a propósito desde otra
+  // función o desde la consola con la palabra exacta.
+  if (confirmacion !== 'BORRAR TODO') {
+    Logger.log(
+      'FRENADO: limpiarDatosDePrueba() borra TODOS los jugadores y TODOS los partidos.\n' +
+        'Si de verdad querés vaciar la planilla, llamala así desde la consola:\n' +
+        "    limpiarDatosDePrueba('BORRAR TODO')\n" +
+        'Si lo que querés es borrar uno o dos partidos puntuales, usá borrarPartidos_().'
+    );
+    return;
+  }
+
   const ss = getSpreadsheet_();
 
   limpiarFilas_(ss.getSheetByName(SHEET_JUGADORES));

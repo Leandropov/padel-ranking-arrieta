@@ -384,3 +384,111 @@ function agregarTopeDeReparto() {
 
   Logger.log('Fila "Tope del reparto por valoración" agregada en la fila ' + destino + ' con valor 0.7.');
 }
+
+/**
+ * Restaura Jugadores, Historial, Registros y las respuestas del formulario
+ * viejo desde una copia de respaldo, y deja la planilla lista para el
+ * esquema actual (delta por jugador en U..X).
+ *
+ * Existe porque limpiarDatosDePrueba() vació la planilla real por error:
+ * está en el mismo archivo que las utilidades de borrado puntual y es la
+ * primera del desplegable, así que es fácil elegirla sin querer.
+ *
+ * Sólo copia VALORES y después reescribe las fórmulas, en vez de copiar
+ * las celdas tal cual: las fórmulas del respaldo apuntan a filas de otra
+ * planilla y traerlas como texto dejaría referencias rotas.
+ *
+ * Es deliberadamente cobarde: si la planilla actual todavía tiene
+ * jugadores, no toca nada. Restaurar encima de datos buenos sería peor
+ * que el problema que viene a resolver.
+ *
+ * Correr a mano pasándole el ID del respaldo (lo que va entre /d/ y /edit
+ * en su URL).
+ */
+function restaurarDesdeRespaldo(idDelRespaldo) {
+  if (!idDelRespaldo) {
+    Logger.log('Pasale el ID del respaldo: restaurarDesdeRespaldo("1TbTN6...")');
+    return;
+  }
+
+  const destino = getSpreadsheet_();
+  const jugadoresDestino = destino.getSheetByName(SHEET_JUGADORES);
+  if (jugadoresDestino.getLastRow() > 1) {
+    Logger.log(
+      'La planilla actual TIENE ' + (jugadoresDestino.getLastRow() - 1) + ' jugador(es). ' +
+        'No se restauró nada: esto sólo corre sobre una planilla vacía.'
+    );
+    return;
+  }
+
+  const origen = SpreadsheetApp.openById(idDelRespaldo);
+  Logger.log('Restaurando desde: ' + origen.getName());
+
+  // --- Jugadores: A..D son valores, E es fórmula ------------------------
+  const jugadores = leerBloque_(origen.getSheetByName(SHEET_JUGADORES), 4);
+  if (!jugadores.length) {
+    Logger.log('El respaldo no tiene jugadores. No se tocó nada.');
+    return;
+  }
+  jugadoresDestino.getRange(2, 1, jugadores.length, 4).setValues(jugadores);
+  jugadoresDestino
+    .getRange(2, 5, jugadores.length, 1)
+    .setFormulas(jugadores.map((_, i) => [formulaPuntajeActual_(i + 2)]));
+  Logger.log('Jugadores restaurados: ' + jugadores.length);
+
+  // --- Historial: A..O son valores, P es fórmula, U..X se recalculan ----
+  const historialDestino = destino.getSheetByName(SHEET_HISTORIAL);
+  const partidos = leerBloque_(origen.getSheetByName(SHEET_HISTORIAL), 15);
+  if (partidos.length) {
+    historialDestino.getRange(2, 1, partidos.length, 15).setValues(partidos);
+    historialDestino
+      .getRange(2, COL_HISTORIAL_NOMBRES, partidos.length, 1)
+      .setFormulas(partidos.map((_, i) => [formulaNombresHistorial_(i + 2)]));
+    // K y L son el delta base por jugador; hasta que alguien valore, los
+    // dos compañeros se mueven igual.
+    historialDestino.getRange(2, COL_HISTORIAL_DELTA_A1, partidos.length, 4).setValues(
+      partidos.map((fila) => {
+        const a = fila[10] === '' || fila[10] === null ? '' : Number(fila[10]);
+        const b = fila[11] === '' || fila[11] === null ? '' : Number(fila[11]);
+        return [a, a, b, b];
+      })
+    );
+  }
+  Logger.log('Partidos restaurados: ' + partidos.length);
+
+  // --- Bitácoras: se copian tal cual, no tienen fórmulas ---------------
+  copiarHojaSimple_(origen, destino, SHEET_REGISTROS);
+  const respuestas = origen.getSheets().find((s) => s.getName().indexOf('Form Responses') === 0);
+  if (respuestas) copiarHojaSimple_(origen, destino, respuestas.getName());
+
+  SpreadsheetApp.flush();
+  invalidarCacheRanking_();
+  Logger.log('Restauración terminada. Revisá el ranking antes de seguir.');
+}
+
+/** Filas de datos (sin encabezado) de una hoja, hasta `columnas` columnas. */
+function leerBloque_(sheet, columnas) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  return sheet
+    .getRange(2, 1, sheet.getLastRow() - 1, columnas)
+    .getValues()
+    .filter((fila) => String(fila[0]).trim() !== '');
+}
+
+function copiarHojaSimple_(origen, destino, nombre) {
+  const hojaOrigen = origen.getSheetByName(nombre);
+  const hojaDestino = destino.getSheetByName(nombre);
+  if (!hojaOrigen || !hojaDestino || hojaOrigen.getLastRow() < 2) return;
+  const columnas = hojaOrigen.getLastColumn();
+  const filas = hojaOrigen.getRange(2, 1, hojaOrigen.getLastRow() - 1, columnas).getValues();
+  hojaDestino.getRange(2, 1, filas.length, columnas).setValues(filas);
+  Logger.log(nombre + ': ' + filas.length + ' fila(s) restaurada(s).');
+}
+
+/**
+ * Envoltorio con el ID del respaldo del 2026-08-18 ya puesto, para poder
+ * correrlo desde el desplegable sin escribir parámetros.
+ */
+function restaurarRespaldoDel18DeAgosto() {
+  restaurarDesdeRespaldo('1TbTN6xvc8jWhpe4J9EACddX2zm8OJLjo4CnVlW2R9Ug');
+}
