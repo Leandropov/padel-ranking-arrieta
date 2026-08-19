@@ -197,6 +197,17 @@ Abrí la pestaña **Categorías** de la planilla y ajustá:
   "Partidos de referencia" de abajo como el punto donde el ajuste llega
   a cero. Mismo criterio que el margen: en una planilla vieja esta fila
   no existe y el ajuste queda desactivado hasta que la agregues a mano.
+- **Margen para cambiar de categoría** (fila 21, columna B): cuántos
+  puntos hay que pasarse de una frontera para que el cambio de categoría
+  se haga efectivo. Sin esto, quien queda parado justo sobre una
+  frontera rebota entre dos categorías partido por medio. Con un margen
+  de 2 sobre categorías de 10 puntos, hace falta llegar a 33 para pasar
+  de cuarta a tercera, y bajar a 28,9 para volver — adentro de esa banda
+  nadie se mueve. 0 lo desactiva y se vuelve al comportamiento de
+  cambiar al cruzar la raya. Mismo criterio que los dos de arriba: en
+  una planilla vieja la fila no existe y el ajuste queda desactivado
+  hasta que la agregues a mano (hay una función que lo hace sola, ver
+  más abajo).
 - **Canchas** (fila 11): lista separada por coma, tal cual las vas a
   ofrecer en el desplegable.
 - **Horario** (filas 13-16): apertura, cierre, duración de bloque y
@@ -204,6 +215,27 @@ Abrí la pestaña **Categorías** de la planilla y ajustá:
   90 minutos (10 bloques por día) y una ventana de detección de 30
   minutos, según lo que confirmaste. Si el club cambia de horario más
   adelante, se edita ahí, sin tocar código.
+
+### Encender la histéresis en una planilla que ya está andando
+
+El código se despliega inerte: mientras la fila del margen no exista, la
+categoría se calcula como siempre. Para encenderla hay que correr dos
+funciones a mano desde el editor de Apps Script (Ejecutar → elegirlas en
+el desplegable), **en este orden**:
+
+1. `migrarCategoriaVigente()` — saca respaldo de la planilla, crea la
+   columna F de Jugadores ("Categoría vigente") y la llena con la
+   categoría que la app venía mostrando para cada jugador. Es la memoria
+   que la histéresis necesita para saber de qué lado venía cada uno.
+2. `agregarMargenDeCategoria()` — agrega la fila del margen a la pestaña
+   Categorías con el valor 2. Desde acá la histéresis está activa.
+
+Antes de la primera, revisá que la columna F de Jugadores esté vacía: la
+migración la escribe entera. Las dos avisan y no hacen nada si ya se
+corrieron.
+
+Ojo con el desplegable de funciones: `limpiarDatosDePrueba` (en
+Reset.js) borra la planilla y aparece antes en la lista.
 
 ### Cómo calibrar K y D
 
