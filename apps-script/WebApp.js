@@ -358,9 +358,13 @@ function contarPartidosJugados_(historialSheet, ids) {
  * regla que para cargar el resultado.
  *
  * `payload.valoraciones` son los puntos que recibió cada jugador:
- * {a1, a2, b1, b2}. Cada pareja la valora UNA persona de la pareja
- * contraria repartiendo 6 puntos, así que cada par suma 6 (o 0 si esa
- * pareja no fue valorada).
+ * {a1, a2, b1, b2}. A cada pareja la valoran LOS DOS de la pareja
+ * contraria, repartiendo 6 puntos cada uno, así que cada par suma 12 --
+ * o 6 si sólo votó uno, o 0 si esa pareja se quedó sin valorar.
+ *
+ * Dos votos y no uno porque con uno solo esa persona decidía sola el
+ * reparto de sus rivales: darle cero a alguien que le cayera mal le
+ * costaba puntos y nadie lo diluía. Con dos, un rencor pesa la mitad.
  */
 function guardarValoracion_(payload) {
   const config = getConfig_();
@@ -371,12 +375,8 @@ function guardarValoracion_(payload) {
   const a2 = numeroValoracion_(val.a2);
   const b1 = numeroValoracion_(val.b1);
   const b2 = numeroValoracion_(val.b2);
-  if (a1 + a2 !== 0 && a1 + a2 !== PUNTOS_VALORACION) {
-    throw new Error('La valoración de la pareja A tiene que repartir ' + PUNTOS_VALORACION + ' puntos exactos.');
-  }
-  if (b1 + b2 !== 0 && b1 + b2 !== PUNTOS_VALORACION) {
-    throw new Error('La valoración de la pareja B tiene que repartir ' + PUNTOS_VALORACION + ' puntos exactos.');
-  }
+  validarParVotos_(a1 + a2, 'A');
+  validarParVotos_(b1 + b2, 'B');
 
   // Mismo candado que al cargar un resultado: dos valoraciones a la vez
   // sobre el mismo partido podrían leer el delta base y escribir encima
@@ -439,12 +439,32 @@ function guardarValoracion_(payload) {
 /** Los puntos que reparte cada persona al valorar a la pareja rival. */
 const PUNTOS_VALORACION = 6;
 
+/** Cuántas personas valoran a cada pareja: los dos rivales. */
+const VOTANTES_POR_PAREJA = 2;
+
 function numeroValoracion_(v) {
   const n = Math.round(Number(v) || 0);
-  if (n < 0 || n > PUNTOS_VALORACION) {
-    throw new Error('Cada valoración va de 0 a ' + PUNTOS_VALORACION + '.');
+  // El tope es el doble porque a cada jugador lo pueden votar los dos
+  // rivales, y en el extremo los dos le dan sus 6 puntos.
+  if (n < 0 || n > PUNTOS_VALORACION * VOTANTES_POR_PAREJA) {
+    throw new Error('Cada valoración va de 0 a ' + PUNTOS_VALORACION * VOTANTES_POR_PAREJA + '.');
   }
   return n;
+}
+
+/**
+ * Lo que recibe una pareja tiene que ser un reparto entero de votantes:
+ * 0 si nadie la valoró, 6 si votó uno, 12 si votaron los dos. Cualquier
+ * otro total significa que llegó algo mal armado.
+ */
+function validarParVotos_(total, cual) {
+  for (let votantes = 0; votantes <= VOTANTES_POR_PAREJA; votantes++) {
+    if (total === PUNTOS_VALORACION * votantes) return;
+  }
+  throw new Error(
+    'La valoración de la pareja ' + cual + ' tiene que sumar 0, ' + PUNTOS_VALORACION +
+      ' o ' + PUNTOS_VALORACION * VOTANTES_POR_PAREJA + ' puntos.'
+  );
 }
 
 /**

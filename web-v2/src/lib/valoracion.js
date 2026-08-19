@@ -1,11 +1,16 @@
 /**
  * Reglas de la valoración entre jugadores, sin JSX.
  *
- * Al terminar un partido, una persona de cada pareja reparte 6 puntos
- * entre los dos rivales. Esos puntos NO suman al ranking: deciden cómo
- * se reparte, entre los dos compañeros, lo que el partido ya le dio a esa
+ * Al terminar un partido, los cuatro reparten 6 puntos cada uno entre
+ * los dos rivales. Esos puntos NO suman al ranking: deciden cómo se
+ * reparte, entre los dos compañeros, lo que el partido ya le dio a esa
  * pareja. Por eso se valora a los rivales y nunca al compañero -- opinar
  * sobre el reparto de tu propia pareja sería opinar sobre tu puntaje.
+ *
+ * Votan los DOS rivales y no uno solo: con un único votante, esa persona
+ * decidía sola el reparto de sus rivales y podía castigar a uno sin que
+ * nadie lo diluyera. Con dos votos independientes, un rencor pesa la
+ * mitad.
  *
  * El cálculo del reparto vive en el backend (repartoPorValoracion_ en
  * Elo.js); acá solo está lo que hace falta para la pantalla.
@@ -33,15 +38,23 @@ export function fraseDelReparto(puntos, nombreUno, nombreOtro) {
 }
 
 /**
- * Arma el objeto que espera el backend a partir de los dos repartos.
- * `puntosA` son los que recibió el primer jugador del equipo A (el resto
- * va al segundo), y lo mismo con `puntosB`. Un `null` significa que esa
- * pareja no se valoró: se manda 0 y 0, y el backend la reparte mitad y
- * mitad.
+ * Arma el objeto que espera el backend a partir de los votos emitidos.
+ *
+ * `votosA` son los repartos que los rivales hicieron sobre la pareja A:
+ * cada número es lo que ese votante le dio al PRIMER jugador de A, y el
+ * resto de sus 6 puntos fue al segundo. Puede haber 0, 1 o 2 votos --
+ * cada quien puede saltarse su turno.
+ *
+ * El backend sólo mira la proporción entre los dos compañeros, así que
+ * que voten uno o dos no cambia la escala: cambia cuánto pesa cada
+ * opinión suelta.
  */
-export function armarValoraciones(puntosA, puntosB) {
-  const par = (p) => (p === null || p === undefined ? [0, 0] : [p, PUNTOS_VALORACION - p]);
-  const [a1, a2] = par(puntosA);
-  const [b1, b2] = par(puntosB);
+export function armarValoraciones(votosA, votosB) {
+  const sumar = (votos) => {
+    const alPrimero = votos.reduce((total, v) => total + v, 0);
+    return [alPrimero, PUNTOS_VALORACION * votos.length - alPrimero];
+  };
+  const [a1, a2] = sumar(votosA || []);
+  const [b1, b2] = sumar(votosB || []);
   return { a1, a2, b1, b2 };
 }

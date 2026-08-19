@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CircleCheckIcon, ClipboardCheckIcon, SmartphoneIcon, UsersIcon } from 'lucide-react';
+import { CircleCheckIcon, ClipboardCheckIcon, UsersIcon } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const vacio = {
@@ -60,14 +60,15 @@ export default function ResultadoPage() {
   const [resultadoEnvio, setResultadoEnvio] = useState(null);
   const [bloqueElegido, setBloqueElegido] = useState(false);
   const [pedirGanador, setPedirGanador] = useState(false);
-  // Valoración. `repartoUno` es lo que reparte quien cargó sobre la
-  // pareja rival; `repartoDos`, lo que reparte un rival sobre la de quien
-  // cargó. Quedan en null si esa pantalla se saltó: el backend entiende
-  // "sin valorar" y reparte mitad y mitad.
-  const [repartoUno, setRepartoUno] = useState(REPARTO_PAREJO);
-  const [repartoDos, setRepartoDos] = useState(REPARTO_PAREJO);
-  const [puntosA, setPuntosA] = useState(null);
-  const [puntosB, setPuntosB] = useState(null);
+  // Valoración. Los cuatro reparten 6 puntos entre sus rivales, uno por
+  // vez en el mismo teléfono. `reparto` es el control de la pantalla
+  // actual; `votosA`/`votosB` acumulan lo que cada votante le dio al
+  // PRIMER jugador de esa pareja. Quedan cortos si alguien salta su
+  // turno: el backend acepta 0, 1 o 2 votos por pareja.
+  const [reparto, setReparto] = useState(REPARTO_PAREJO);
+  const [turnoActual, setTurnoActual] = useState(0);
+  const [votosA, setVotosA] = useState([]);
+  const [votosB, setVotosB] = useState([]);
   const [deltasFinales, setDeltasFinales] = useState(null);
 
   const cargar = useCallback(() => {
@@ -195,10 +196,14 @@ export default function ResultadoPage() {
   }
 
   // --- Valoración -------------------------------------------------------
-  // Quien cargó valora a sus RIVALES, nunca a su compañero: los dos
+  // Cada uno valora a la pareja RIVAL, nunca a la propia: los dos
   // compañeros se reparten el mismo total, así que opinar sobre ese
-  // reparto sería opinar sobre el puntaje propio. Por eso hacen falta dos
-  // personas y por eso el teléfono se pasa una vez.
+  // reparto sería opinar sobre el puntaje propio.
+  //
+  // Votan los cuatro, no dos. Con un solo votante por pareja, esa persona
+  // decidía sola el reparto de sus rivales y podía castigar a uno sin que
+  // nadie lo diluyera; con dos votos independientes, un rencor pesa la
+  // mitad.
 
   // En modo administración quien carga puede no haber jugado, y entonces
   // no tiene nada que valorar.
@@ -207,27 +212,44 @@ export default function ResultadoPage() {
   }
 
   const soyDeA = form.equipoA.includes(form.quienEres);
-  // La pareja que valora quien cargó es siempre la contraria a la suya.
-  const parejaRival = soyDeA ? form.equipoB : form.equipoA;
-  const parejaPropia = soyDeA ? form.equipoA : form.equipoB;
+  const miPareja = soyDeA ? form.equipoA : form.equipoB;
+  const otraPareja = soyDeA ? form.equipoB : form.equipoA;
 
-  // Guarda el reparto de la pantalla en el lado que corresponda: el mismo
-  // control sirve para las dos pantallas, pero según de qué equipo sea
-  // quien cargó, lo que sale de cada una es puntosA o puntosB.
-  function guardarReparto(puntos, sobreLaPropia) {
-    const esEquipoA = sobreLaPropia ? soyDeA : !soyDeA;
-    if (esEquipoA) setPuntosA(puntos);
-    else setPuntosB(puntos);
-    return esEquipoA ? { a: puntos, b: puntosB } : { a: puntosA, b: puntos };
+  // Orden de los turnos: primero quien tiene el teléfono en la mano, después
+  // su compañero (que está del mismo lado de la red), y recién ahí cruza a
+  // los dos rivales. Así el aparato hace un solo viaje.
+  const turnos = [
+    form.quienEres,
+    miPareja.find((id) => id !== form.quienEres),
+    ...otraPareja,
+  ].map((quienValora, i) => ({ quienValora, pareja: i < 2 ? otraPareja : miPareja }));
+
+  /**
+   * Cierra el turno actual y pasa al siguiente, o termina si era el
+   * último. `puntos` es lo que este votante le dio al primer jugador de la
+   * pareja que estaba valorando, o null si saltó su turno.
+   */
+  function siguienteTurno(puntos) {
+    const { pareja } = turnos[turnoActual];
+    const esParejaA = form.equipoA.includes(pareja[0]);
+    const nuevosA = esParejaA && puntos !== null ? [...votosA, puntos] : votosA;
+    const nuevosB = !esParejaA && puntos !== null ? [...votosB, puntos] : votosB;
+
+    setVotosA(nuevosA);
+    setVotosB(nuevosB);
+    setReparto(REPARTO_PAREJO);
+
+    if (turnoActual + 1 < turnos.length) setTurnoActual(turnoActual + 1);
+    else terminarValoracion(nuevosA, nuevosB);
   }
 
-  // Manda la valoración y termina. `pendiente` permite pasar el valor que
-  // se acaba de elegir sin esperar a que React aplique el setState.
-  function terminarValoracion(pendiente) {
-    const a = pendiente && 'a' in pendiente ? pendiente.a : puntosA;
-    const b = pendiente && 'b' in pendiente ? pendiente.b : puntosB;
+  // Manda lo votado y termina. Recibe los arreglos por parámetro porque
+  // el último voto se acaba de agregar y setState todavía no lo aplicó.
+  function terminarValoracion(finalesA, finalesB) {
+    const a = finalesA || votosA;
+    const b = finalesB || votosB;
 
-    if (a === null && b === null) {
+    if (!a.length && !b.length) {
       setPaso('done');
       return;
     }
@@ -271,7 +293,7 @@ export default function ResultadoPage() {
         // El partido ya está guardado y a salvo. Recién ahora se pide la
         // valoración: si alguien abandona de acá en adelante, lo único
         // que se pierde es el matiz de quién jugó mejor.
-        setPaso(sePuedeValorar() ? 'valorar-rivales' : 'done');
+        setPaso(sePuedeValorar() ? 'valorar' : 'done');
       })
       .catch((err) => setConfirmError(err.message))
       .finally(() => setEnviando(false));
@@ -301,70 +323,58 @@ export default function ResultadoPage() {
     );
   }
 
-  // Las tres pantallas de la valoración van DESPUÉS del envío: el partido
-  // ya está guardado, así que abandonar acá no cuesta nada.
-  if (paso === 'valorar-rivales') {
-    return (
-      <PasoValoracion
-        icono={<UsersIcon className="size-7 text-primary" />}
-        titulo="¿Quién jugó mejor de los rivales?"
-        bajada={'Reparte 6 puntos entre ellos. No suman al ranking: deciden cómo se reparte, entre los dos, lo que ya ganó o perdió esa pareja.'}
-        nombreUno={etiquetaDe(parejaRival[0])}
-        nombreOtro={etiquetaDe(parejaRival[1])}
-        puntos={repartoUno}
-        onChange={setRepartoUno}
-        enviando={enviando}
-        onContinuar={() => {
-          guardarReparto(repartoUno, false);
-          setPaso('pasar-telefono');
-        }}
-        onSaltar={() => terminarValoracion(null)}
-      />
-    );
-  }
-
-  if (paso === 'pasar-telefono') {
+  // La valoración va DESPUÉS del envío: el partido ya está guardado, así
+  // que abandonar acá no cuesta nada. Es una sola pantalla que se repite
+  // cuatro veces, una por votante.
+  //
+  // El "pásale el teléfono" no es una pantalla aparte: iba bien con un
+  // solo traspaso, pero con tres habría siete pantallas para una tarea de
+  // medio minuto. Cada turno anuncia de quién es y con eso alcanza.
+  if (paso === 'valorar') {
+    const turno = turnos[turnoActual];
+    const esMiTurno = turnoActual === 0;
     return (
       <FlowShell>
         <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-          <SmartphoneIcon className="size-7 text-primary" />
+          <UsersIcon className="size-7 text-primary" />
         </div>
         <CardHeader className="text-center">
+          <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+            Turno {turnoActual + 1} de {turnos.length}
+          </p>
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">
-            Pásale el teléfono a {etiquetaDe(parejaRival[0])}
+            {esMiTurno ? '¿Quién jugó mejor de tus rivales?' : etiquetaDe(turno.quienValora)}
           </CardTitle>
           <p className="text-base text-muted-foreground">
-            Falta que alguien de la otra pareja diga quién jugó mejor de ustedes dos. Tú no puedes
-            hacerlo: se repartirían tus propios puntos.
+            {esMiTurno
+              ? 'Reparte 6 puntos entre ellos. No suman al ranking: deciden cómo se reparte, entre los dos, lo que ya ganó o perdió esa pareja.'
+              : 'Pásale el teléfono. Le toca repartir 6 puntos entre sus rivales, y nadie puede valorar a su propio compañero.'}
           </p>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Button className="w-full" onClick={() => setPaso('valorar-propia')} disabled={enviando}>
-            Listo, lo tengo
-          </Button>
-          <Button variant="secondary" onClick={() => terminarValoracion(null)} disabled={enviando}>
-            {enviando ? 'Guardando…' : 'Saltar esto'}
-          </Button>
+        <CardContent className="flex flex-col gap-5">
+          <RepartoValoracion
+            nombreUno={etiquetaDe(turno.pareja[0])}
+            nombreOtro={etiquetaDe(turno.pareja[1])}
+            puntos={reparto}
+            onChange={setReparto}
+          />
+          <div className="flex flex-col gap-4">
+            <Button className="w-full" onClick={() => siguienteTurno(reparto)} disabled={enviando}>
+              {enviando ? 'Guardando…' : turnoActual + 1 === turnos.length ? 'Terminar' : 'Continuar'}
+            </Button>
+            {/* En el primer turno saltar significa que el grupo no va a
+                valorar y se termina ahí; después ya hay votos de otros y
+                saltar es sólo pasar de largo el propio. */}
+            <Button
+              variant="secondary"
+              onClick={() => (esMiTurno ? terminarValoracion([], []) : siguienteTurno(null))}
+              disabled={enviando}
+            >
+              {esMiTurno ? 'Saltar la valoración' : 'Saltar mi turno'}
+            </Button>
+          </div>
         </CardContent>
       </FlowShell>
-    );
-  }
-
-  if (paso === 'valorar-propia') {
-    return (
-      <PasoValoracion
-        icono={<UsersIcon className="size-7 text-primary" />}
-        titulo={'¿Quién jugó mejor de los dos?'}
-        bajada={'Reparte 6 puntos entre ellos, como te haya parecido el partido desde el otro lado de la red.'}
-        nombreUno={etiquetaDe(parejaPropia[0])}
-        nombreOtro={etiquetaDe(parejaPropia[1])}
-        puntos={repartoDos}
-        onChange={setRepartoDos}
-        enviando={enviando}
-        textoContinuar="Terminar"
-        onContinuar={() => terminarValoracion(guardarReparto(repartoDos, true))}
-        onSaltar={() => terminarValoracion(null)}
-      />
     );
   }
 
@@ -757,49 +767,3 @@ function deltasPorJugador(res) {
   ];
 }
 
-// Las dos pantallas de valoración son la misma salvo los textos y a quién
-// se está valorando, así que comparten cuerpo. El botón de saltar está
-// siempre: valorar es opcional y el partido ya quedó guardado.
-function PasoValoracion({
-  icono,
-  titulo,
-  bajada,
-  nombreUno,
-  nombreOtro,
-  puntos,
-  onChange,
-  onContinuar,
-  onSaltar,
-  enviando,
-  textoContinuar = 'Continuar',
-}) {
-  return (
-    <FlowShell>
-      <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-        {icono}
-      </div>
-      <CardHeader className="text-center">
-        <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">
-          {titulo}
-        </CardTitle>
-        <p className="text-base text-muted-foreground">{bajada}</p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        <RepartoValoracion
-          nombreUno={nombreUno}
-          nombreOtro={nombreOtro}
-          puntos={puntos}
-          onChange={onChange}
-        />
-        <div className="flex flex-col gap-4">
-          <Button className="w-full" onClick={onContinuar} disabled={enviando}>
-            {enviando ? 'Guardando…' : textoContinuar}
-          </Button>
-          <Button variant="secondary" onClick={onSaltar} disabled={enviando}>
-            Saltar
-          </Button>
-        </div>
-      </CardContent>
-    </FlowShell>
-  );
-}
