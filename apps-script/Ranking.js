@@ -109,16 +109,36 @@ function invalidarCacheRanking_() {
 
 /**
  * A qué categoría corresponde un puntaje, según los rangos de la
- * pestaña Categorías. Si el puntaje quedó fuera de todos los rangos
- * definidos (por ejemplo, alguien superó el techo de la categoría más
- * alta y el club no cargó una superior), se lo deja en el extremo más
- * cercano en vez de romper -- nunca debería faltarle categoría a nadie.
+ * pestaña Categorías.
+ *
+ * Clasifica por el PISO de cada rango, nunca por el par piso/techo. El
+ * club escribe los rangos como "0 a 10", "11 a 20", "21 a 30"..., así
+ * que entre el techo de uno y el piso del siguiente queda un hueco de
+ * un punto. Los puntajes, en cambio, son decimales -- salen de sumar
+ * deltas --, de modo que caer adentro de un hueco no es un caso raro de
+ * borde: con las categorías cada 10 puntos le toca a cerca de uno de
+ * cada diez jugadores. Buscando por piso, "hasta 30" y "desde 31"
+ * describen el mismo corte y no queda agujero posible.
+ *
+ * Antes se buscaba el rango con min <= puntaje <= max y, al no
+ * encontrarlo, un fallback mandaba al jugador a la categoría MÁS ALTA
+ * (estaba pensado para quien superara el techo de la última). En
+ * producción eso puso en Segunda a un jugador de 30,362 puntos, por
+ * encima de otro de 33,787 que sí figuraba en Tercera.
+ *
+ * El techo de cada rango (columna C) sigue haciendo falta para otra
+ * cosa: Jugadores.js calcula con él el puntaje inicial de quien se
+ * registra, que es el medio del rango que declaró.
  */
 function categoriaPorPuntaje_(puntaje, rangos) {
-  const enRango = rangos.find((r) => puntaje >= r.min && puntaje <= r.max);
-  if (enRango) return enRango.nombre;
   const ordenados = [...rangos].sort((a, b) => a.min - b.min);
-  return puntaje < ordenados[0].min ? ordenados[0].nombre : ordenados[ordenados.length - 1].nombre;
+  // Por debajo del piso más bajo se queda en la categoría más baja:
+  // nunca debería faltarle categoría a nadie.
+  let elegida = ordenados[0];
+  for (const rango of ordenados) {
+    if (puntaje >= rango.min) elegida = rango;
+  }
+  return elegida.nombre;
 }
 
 /**
