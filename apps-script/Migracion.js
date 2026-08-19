@@ -406,8 +406,23 @@ function agregarTopeDeReparto() {
  * en su URL).
  */
 function restaurarDesdeRespaldo(idDelRespaldo) {
+  // Desde el desplegable esto se ejecuta SIN argumentos, así que en vez de
+  // pedir un ID que nadie tiene a mano, se listan los respaldos que hay en
+  // el Drive para poder copiar el que corresponda. Antes esta función
+  // parecía "no hacer nada" y era fácil creer que había restaurado.
   if (!idDelRespaldo) {
-    Logger.log('Pasale el ID del respaldo: restaurarDesdeRespaldo("1TbTN6...")');
+    Logger.log('Esta función necesita el ID de un respaldo. Los que hay en tu Drive:');
+    const archivos = DriveApp.searchFiles(
+      'title contains "respaldo" and mimeType = "application/vnd.google-apps.spreadsheet" and trashed = false'
+    );
+    let hubo = false;
+    while (archivos.hasNext()) {
+      const f = archivos.next();
+      hubo = true;
+      Logger.log('  ' + f.getName() + '\n      restaurarDesdeRespaldo("' + f.getId() + '")');
+    }
+    if (!hubo) Logger.log('  (no encontré ninguno)');
+    Logger.log('Copiá la línea del respaldo que quieras y corréla desde la consola del editor.');
     return;
   }
 
@@ -486,9 +501,33 @@ function copiarHojaSimple_(origen, destino, nombre) {
 }
 
 /**
- * Envoltorio con el ID del respaldo del 2026-08-18 ya puesto, para poder
- * correrlo desde el desplegable sin escribir parámetros.
+ * Restaura desde el respaldo más reciente que haya en el Drive.
+ *
+ * Existe porque el editor de Apps Script no tiene consola: solo se pueden
+ * ejecutar funciones del desplegable, sin argumentos. Sin esta, recuperar
+ * la planilla exigía escribir a mano una función con el ID del respaldo
+ * adentro -- justo el trámite que uno no quiere estar haciendo cuando
+ * acaba de perder los datos.
+ *
+ * Es segura por construcción: restaurarDesdeRespaldo se niega a tocar una
+ * planilla que todavía tenga jugadores.
  */
-function restaurarRespaldoDel18DeAgosto() {
-  restaurarDesdeRespaldo('1TbTN6xvc8jWhpe4J9EACddX2zm8OJLjo4CnVlW2R9Ug');
+function restaurarDesdeElRespaldoMasReciente() {
+  const archivos = DriveApp.searchFiles(
+    'title contains "respaldo" and mimeType = "application/vnd.google-apps.spreadsheet" and trashed = false'
+  );
+
+  let elegido = null;
+  while (archivos.hasNext()) {
+    const f = archivos.next();
+    if (!elegido || f.getDateCreated() > elegido.getDateCreated()) elegido = f;
+  }
+
+  if (!elegido) {
+    Logger.log('No encontré ningún respaldo en tu Drive.');
+    return;
+  }
+
+  Logger.log('Respaldo más reciente: ' + elegido.getName());
+  restaurarDesdeRespaldo(elegido.getId());
 }

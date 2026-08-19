@@ -1,19 +1,26 @@
 /**
  * Reset.js
- * Utilidad de una sola vez para vaciar los datos de prueba antes de
- * invitar jugadores reales. Correr limpiarDatosDePrueba() a mano desde
- * el editor de Apps Script (elegirla en el desplegable de funciones y
- * tocar Ejecutar) -- no está atada a ningún trigger, no se dispara sola.
+ * Herramientas de borrado sobre la planilla. Ninguna está atada a un
+ * trigger: se corren a mano desde el editor de Apps Script.
  *
- * Borra todas las filas de Jugadores, Historial, Registros y las
- * respuestas del formulario viejo (deja los encabezados). NO toca
- * Categorías (la configuración del club) ni el Ranking, que es 100%
- * fórmula sobre Jugadores y queda vacío solo.
+ * Hay dos, y la diferencia importa:
  *
- * Al vaciar Jugadores se reinicia también la numeración de IDs: el
- * próximo jugador vuelve a ser J001. Es lo correcto para un reset de
- * datos de prueba, pero NO corras esto con datos reales -- los IDs de
- * los partidos que queden en cualquier lado dejarían de apuntar a nadie.
+ *   borrarPartidos_()      quirúrgico. Borra los partidos que se le
+ *                          nombren, por fecha + cancha + hora.
+ *
+ *   limpiarDatosDePrueba() arrasa. Deja la planilla en cero: sin
+ *                          jugadores, sin historial, sin bitácoras.
+ *
+ * El 2026-08-18 se corrió la segunda queriendo la primera y se perdieron
+ * los 17 jugadores y los 36 partidos del club (recuperados desde el
+ * respaldo automático de la migración). Por eso ahora la destructiva pide
+ * una confirmación explícita y desde el desplegable no hace nada.
+ *
+ * Regla para el futuro: las funciones de un solo uso que envuelven a
+ * borrarPartidos_ con fechas concretas se BORRAN de este archivo una vez
+ * corridas. Si se dejan, el desplegable se llena de nombres parecidos que
+ * ya no hacen nada, y entre ellos es cuestión de tiempo elegir el
+ * equivocado.
  */
 function limpiarDatosDePrueba(confirmacion) {
   // Seguro. El 2026-08-18 esta función se corrió por error sobre la
@@ -25,9 +32,11 @@ function limpiarDatosDePrueba(confirmacion) {
   if (confirmacion !== 'BORRAR TODO') {
     Logger.log(
       'FRENADO: limpiarDatosDePrueba() borra TODOS los jugadores y TODOS los partidos.\n' +
-        'Si de verdad querés vaciar la planilla, llamala así desde la consola:\n' +
-        "    limpiarDatosDePrueba('BORRAR TODO')\n" +
-        'Si lo que querés es borrar uno o dos partidos puntuales, usá borrarPartidos_().'
+        'El editor no tiene consola, así que para correrla de verdad hay que escribir\n' +
+        'una función temporal en este archivo que la llame con la palabra exacta:\n' +
+        "    function vaciarTodoDeVerdad() { limpiarDatosDePrueba('BORRAR TODO'); }\n" +
+        'Ese trámite es a propósito: obliga a decidirlo dos veces.\n' +
+        'Si lo que querés es borrar uno o dos partidos puntuales, no es esta función.'
     );
     return;
   }
@@ -40,6 +49,11 @@ function limpiarDatosDePrueba(confirmacion) {
 
   const respuestas = ss.getSheets().find((s) => s.getName().indexOf('Form Responses') === 0);
   limpiarFilas_(respuestas);
+
+  // Sin esto el ranking sigue sirviendo desde la caché los puntajes de
+  // los jugadores que acaban de desaparecer.
+  SpreadsheetApp.flush();
+  invalidarCacheRanking_();
 
   Logger.log(
     'Listo. Jugadores, Historial, Registros' +
@@ -124,7 +138,13 @@ function borrarPartidos_(claves) {
     return;
   }
 
-  aBorrar
+  // Sin quitar repetidos, borrar dos veces la misma fila se lleva puesta
+  // a la siguiente: al borrar la fila N las de abajo suben, así que el
+  // segundo deleteRow(N) elimina un partido que nadie pidió borrar. Pasa
+  // con solo repetir una clave por copy-paste.
+  const filasUnicas = aBorrar.filter((fila, i) => aBorrar.indexOf(fila) === i);
+
+  filasUnicas
     .sort((a, b) => b - a)
     .forEach((fila) => {
       Logger.log('Borrando fila ' + fila + ' del Historial.');
@@ -133,30 +153,5 @@ function borrarPartidos_(claves) {
 
   SpreadsheetApp.flush();
   invalidarCacheRanking_();
-  Logger.log(aBorrar.length + ' fila(s) borrada(s). Los puntajes ya se recalcularon solos.');
-}
-
-/**
- * Los dos partidos de prueba que quedaron cargados el 2026-08-17 mientras
- * se probaba el marcador nuevo contra producción. Movieron el puntaje de
- * 7 jugadores reales. Correr una vez y después se puede borrar esta
- * función.
- */
-function borrarPruebasDel17DeAgosto() {
-  borrarPartidos_([
-    { fecha: '2026-08-17', cancha: 'Cancha 4', hora: '20:30' },
-    { fecha: '2026-08-17', cancha: 'Cancha 4', hora: '19:00' },
-  ]);
-}
-
-/**
- * Los dos partidos de prueba del 2026-08-18, cargados para verificar el
- * reparto por valoración de punta a punta (uno por API, otro desde la
- * pantalla). Movieron el puntaje de 8 jugadores reales. Correr una vez.
- */
-function borrarPruebasDel18DeAgosto() {
-  borrarPartidos_([
-    { fecha: '2026-08-18', cancha: 'Cancha 5', hora: '10:00' },
-    { fecha: '2026-08-18', cancha: 'Cancha 3', hora: '22:00' },
-  ]);
+  Logger.log(filasUnicas.length + ' fila(s) borrada(s). Los puntajes ya se recalcularon solos.');
 }
