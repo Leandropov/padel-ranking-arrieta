@@ -200,6 +200,132 @@ function verificarPuntajes_(jugadoresSheet, jugadores, puntajesAntes) {
 }
 
 /**
+ * Migración de UNA SOLA VEZ: de un delta por PAREJA a un delta por
+ * JUGADOR. Correr a mano desde el editor de Apps Script.
+ *
+ * Por qué: hasta ahora los dos compañeros de una pareja se movían
+ * exactamente lo mismo, así que alcanzaba con guardar un delta por equipo
+ * (columnas K y L) y sumárselo a los dos. Cuando los rivales empiecen a
+ * valorar quién jugó mejor, los compañeros dejan de moverse igual y cada
+ * uno necesita su propio número.
+ *
+ * Esta migración NO cambia ningún puntaje. Solo copia el delta de cada
+ * pareja a las dos columnas nuevas de sus jugadores (U=V=K, W=X=L) y
+ * repunta las fórmulas de Jugadores para que lean de ahí. El reparto
+ * según valoración se conecta después, en un cambio aparte.
+ *
+ * Qué hace, en orden:
+ *   1. Respalda la planilla entera.
+ *   2. Anota el puntaje actual de cada jugador (para verificar al final).
+ *   3. Escribe los encabezados de Q..X en el Historial.
+ *   4. Copia K -> U,V y L -> W,X en todas las filas existentes.
+ *   5. Reescribe la fórmula de puntaje de cada jugador (ahora lee U..X).
+ *   6. Verifica que los puntajes hayan quedado EXACTAMENTE iguales.
+ */
+function migrarADeltaPorJugador() {
+  const ss = getSpreadsheet_();
+  const jugadoresSheet = ss.getSheetByName(SHEET_JUGADORES);
+  const historialSheet = ss.getSheetByName(SHEET_HISTORIAL);
+
+  if (String(historialSheet.getRange(1, COL_HISTORIAL_DELTA_A1).getValue()).trim() === 'Delta A1') {
+    Logger.log('La planilla YA está migrada (Historial!U1 dice "Delta A1"). No se tocó nada.');
+    return;
+  }
+
+  const respaldo = ss.copy(
+    ss.getName() +
+      ' (respaldo pre-delta-por-jugador ' +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm') +
+      ')'
+  );
+  Logger.log('Respaldo creado: ' + respaldo.getUrl());
+
+  // --- 2. Estado previo, indexado por ID -------------------------------
+  const ultimaFilaJugadores = jugadoresSheet.getLastRow();
+  if (ultimaFilaJugadores < 2) {
+    Logger.log('No hay jugadores. No hay nada que migrar.');
+    return;
+  }
+  const jugadores = jugadoresSheet
+    .getRange(2, 1, ultimaFilaJugadores - 1, 5)
+    .getValues()
+    .filter((fila) => fila[0]);
+
+  const puntajesAntes = {};
+  jugadores.forEach(([id, , , , actual]) => {
+    puntajesAntes[String(id).trim()] = Number(actual);
+  });
+
+  // --- 3. Encabezados nuevos -------------------------------------------
+  historialSheet
+    .getRange(1, COL_HISTORIAL_VAL_A1, 1, ENCABEZADOS_VALORACION.length)
+    .setValues([ENCABEZADOS_VALORACION])
+    .setFontWeight('bold');
+
+  // --- 4. Copiar los deltas de pareja a los de jugador ------------------
+  // Se lee y se escribe todo de una sola vez: fila por fila serían cientos
+  // de llamadas a la planilla y Apps Script corta a los 6 minutos.
+  const ultimaFilaHistorial = historialSheet.getLastRow();
+  let partidos = 0;
+  if (ultimaFilaHistorial >= 2) {
+    const cantidad = ultimaFilaHistorial - 1;
+    const deltasPareja = historialSheet.getRange(2, 11, cantidad, 2).getValues(); // K y L
+    const porJugador = deltasPareja.map(([deltaA, deltaB]) => {
+      // Una fila sin delta (cargada a mano, o a medio escribir) se deja en
+      // blanco en vez de convertirse en un 0 que el SUMIF sí sumaría.
+      const a = deltaA === '' || deltaA === null ? '' : Number(deltaA);
+      const b = deltaB === '' || deltaB === null ? '' : Number(deltaB);
+      return [a, a, b, b];
+    });
+    historialSheet
+      .getRange(2, COL_HISTORIAL_DELTA_A1, cantidad, 4)
+      .setValues(porJugador);
+    partidos = cantidad;
+  }
+  Logger.log('Deltas copiados en ' + partidos + ' partido(s).');
+
+  // --- 5. Repuntar las fórmulas de Jugadores ---------------------------
+  const formulas = jugadores.map((_, i) => [formulaPuntajeActual_(i + 2)]);
+  if (formulas.length) {
+    jugadoresSheet.getRange(2, 5, formulas.length, 1).setFormulas(formulas);
+  }
+  Logger.log('Fórmulas repuntadas en ' + formulas.length + ' jugador(es).');
+
+  // --- 6. Verificación --------------------------------------------------
+  SpreadsheetApp.flush();
+  verificarPuntajesPorId_(jugadoresSheet, jugadores.length, puntajesAntes);
+
+  Logger.log('Migración terminada. Respaldo: ' + respaldo.getUrl());
+}
+
+/**
+ * Gemela de verificarPuntajes_, pero comparando por ID en vez de por
+ * nombre: acá los IDs ya existen de la migración anterior y son la clave
+ * confiable. Esta migración no debe mover ningún puntaje ni un decimal.
+ */
+function verificarPuntajesPorId_(jugadoresSheet, cantidad, puntajesAntes) {
+  const despues = jugadoresSheet.getRange(2, 1, cantidad, 5).getValues();
+  const problemas = [];
+
+  despues.forEach(([id, nombre, , , actual]) => {
+    const antes = puntajesAntes[String(id).trim()];
+    if (antes === undefined) return;
+    const ahora = Number(actual);
+    if (Math.abs(antes - ahora) > 0.001) {
+      problemas.push(nombre + ' (' + id + '): antes ' + antes.toFixed(3) + ', ahora ' + ahora.toFixed(3));
+    }
+  });
+
+  if (problemas.length) {
+    Logger.log('*** LOS PUNTAJES NO COINCIDEN. Revisar antes de seguir: ***');
+    problemas.forEach((p) => Logger.log('  - ' + p));
+    Logger.log('Volvé al respaldo que se creó al principio.');
+  } else {
+    Logger.log('Verificación OK: los ' + cantidad + ' puntajes quedaron idénticos.');
+  }
+}
+
+/**
  * Cierra el Google Form de registro viejo, si todavía existe, y le deja
  * un mensaje a quien entre con el link guardado.
  *

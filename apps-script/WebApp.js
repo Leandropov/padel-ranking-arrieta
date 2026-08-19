@@ -215,9 +215,19 @@ function submitResultado(payload) {
     // Esta fórmula los traduce a nombres para quien abra la planilla; al
     // ser fórmula y no texto, si alguien corrige un nombre en Jugadores
     // el historial viejo también queda corregido.
+    const filaNueva = historialSheet.getLastRow();
     historialSheet
-      .getRange(historialSheet.getLastRow(), COL_HISTORIAL_NOMBRES)
-      .setFormula(formulaNombresHistorial_(historialSheet.getLastRow()));
+      .getRange(filaNueva, COL_HISTORIAL_NOMBRES)
+      .setFormula(formulaNombresHistorial_(filaNueva));
+
+    // El delta por jugador (U..X) es de donde el puntaje de cada uno se
+    // calcula desde la migración a delta por jugador. Por ahora los dos
+    // compañeros reciben lo mismo -- el reparto según la valoración de
+    // los rivales todavía no está conectado, así que esto se comporta
+    // igual que antes. Las valoraciones (Q..T) quedan vacías.
+    historialSheet
+      .getRange(filaNueva, COL_HISTORIAL_VAL_A1, 1, 8)
+      .setValues([['', '', '', '', deltaA, deltaA, deltaB, deltaB]]);
 
     // Este partido acaba de mover los puntajes, así que el ranking
     // cacheado quedó viejo. El flush primero: ver invalidarCacheRanking_

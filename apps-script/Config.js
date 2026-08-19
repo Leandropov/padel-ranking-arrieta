@@ -18,6 +18,35 @@ const SHEET_REGISTROS = 'Registros';
 // columnas E..H. Ver formulaNombresHistorial_ en Jugadores.js.
 const COL_HISTORIAL_NOMBRES = 16;
 
+// Columnas Q..X del Historial, agregadas al final para no correr ninguna
+// de las que ya existían. Guardan la valoración que recibió cada jugador
+// en ese partido y el delta que le tocó a cada uno.
+//
+// Antes había UN delta por pareja (K y L) que se le sumaba igual a los
+// dos compañeros. Desde que los rivales valoran, los dos compañeros ya no
+// se mueven lo mismo, así que el delta pasa a ser por jugador. K y L
+// siguen guardándose como el delta base, antes del reparto: sirven para
+// auditar de dónde salió cada split.
+const COL_HISTORIAL_VAL_A1 = 17;
+const COL_HISTORIAL_VAL_A2 = 18;
+const COL_HISTORIAL_VAL_B1 = 19;
+const COL_HISTORIAL_VAL_B2 = 20;
+const COL_HISTORIAL_DELTA_A1 = 21;
+const COL_HISTORIAL_DELTA_A2 = 22;
+const COL_HISTORIAL_DELTA_B1 = 23;
+const COL_HISTORIAL_DELTA_B2 = 24;
+
+const ENCABEZADOS_VALORACION = [
+  'Valoración A1',
+  'Valoración A2',
+  'Valoración B1',
+  'Valoración B2',
+  'Delta A1',
+  'Delta A2',
+  'Delta B1',
+  'Delta B2',
+];
+
 // Filas del bloque de configuración usadas SOLO por Setup.js para
 // escribir el layout inicial en una instalación nueva. La LECTURA en
 // getConfig_() ya no depende de estos números fijos: busca por etiqueta,

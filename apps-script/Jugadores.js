@@ -123,16 +123,23 @@ function siguienteIdJugador_(jugadores) {
 /**
  * Fórmula del puntaje actual de la fila `fila`: el puntaje inicial más
  * todos los deltas del Historial donde ese ID aparece. Las columnas
- * E..H del Historial son los 4 jugadores (A1, A2, B1, B2) y K/L los
- * deltas de cada equipo.
+ * E..H del Historial son los 4 jugadores (A1, A2, B1, B2) y U..X el
+ * delta que le tocó a cada uno de ellos.
+ *
+ * Ojo con la correspondencia posicional: cada SUMIF cruza la columna del
+ * jugador con la columna de SU delta, no con la del equipo. E va con U,
+ * F con V, G con W y H con X. Antes las cuatro apuntaban a K/L (un delta
+ * por pareja) porque los dos compañeros se movían igual; desde que los
+ * rivales valoran, cada uno se mueve distinto. Ver migrarADeltaPorJugador
+ * en Migracion.js.
  */
 function formulaPuntajeActual_(fila) {
   return (
     '=D' + fila +
-    ' + SUMIF(Historial!E:E,$A' + fila + ',Historial!K:K)' +
-    ' + SUMIF(Historial!F:F,$A' + fila + ',Historial!K:K)' +
-    ' + SUMIF(Historial!G:G,$A' + fila + ',Historial!L:L)' +
-    ' + SUMIF(Historial!H:H,$A' + fila + ',Historial!L:L)'
+    ' + SUMIF(Historial!E:E,$A' + fila + ',Historial!U:U)' +
+    ' + SUMIF(Historial!F:F,$A' + fila + ',Historial!V:V)' +
+    ' + SUMIF(Historial!G:G,$A' + fila + ',Historial!W:W)' +
+    ' + SUMIF(Historial!H:H,$A' + fila + ',Historial!X:X)'
   );
 }
 
