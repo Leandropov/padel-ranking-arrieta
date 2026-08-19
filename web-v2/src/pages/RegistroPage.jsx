@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CircleCheckIcon } from 'lucide-react';
 import { Portada } from '@/components/Portada';
 
 /**
@@ -114,9 +113,7 @@ export default function RegistroPage() {
   if (registrado) {
     return (
       <FlowShell>
-        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-          <CircleCheckIcon className="size-7 text-primary" />
-        </div>
+        <Portada />
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Listo, {registrado.nombre}!</CardTitle>
           <p className="text-base text-muted-foreground">

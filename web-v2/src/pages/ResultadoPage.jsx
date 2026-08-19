@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CircleCheckIcon, ClipboardCheckIcon, UsersIcon } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Portada } from '@/components/Portada';
 
@@ -336,9 +335,7 @@ export default function ResultadoPage() {
     const esMiTurno = turnoActual === 0;
     return (
       <FlowShell>
-        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-          <UsersIcon className="size-7 text-primary" />
-        </div>
+        <Portada />
         <CardHeader className="text-center">
           <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
             Turno {turnoActual + 1} de {turnos.length}
@@ -382,9 +379,7 @@ export default function ResultadoPage() {
   if (paso === 'done') {
     return (
       <FlowShell>
-        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-          <CircleCheckIcon className="size-7 text-primary" />
-        </div>
+        <Portada />
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">¡Resultado registrado!</CardTitle>
         </CardHeader>
@@ -409,9 +404,7 @@ export default function ResultadoPage() {
   if (paso === 'confirm') {
     return (
       <FlowShell>
-        <div className="flex aspect-[21/9] w-full items-center justify-center rounded-t-[calc(var(--radius-2xl)-1px)] bg-[#16432c]">
-          <ClipboardCheckIcon className="size-7 text-primary" />
-        </div>
+        <Portada />
         <CardHeader className="text-center">
           <CardTitle className="font-heading text-[34px] leading-[1.0] font-bold tracking-[-0.035em]">Revisa los datos antes de enviar</CardTitle>
         </CardHeader>
