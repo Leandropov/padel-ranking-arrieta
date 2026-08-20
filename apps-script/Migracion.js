@@ -483,6 +483,151 @@ function migrarCategoriaVigente() {
 }
 
 /**
+ * Fronteras calibradas con la distribución real del club (225 socios:
+ * Tercera 8, Cuarta 110, Quinta 89, Sexta 18, Segunda 0).
+ *
+ * No son cinco cajones iguales porque el club no está repartido parejo:
+ * el 88% vive en Cuarta y Quinta. Cada frontera se puso donde el club
+ * efectivamente parte a su gente, así que Cuarta y Quinta salen anchas
+ * (cubren la panza de la campana) y Tercera sale angosta (ahí arriba hay
+ * 8 personas y no necesitan 10 puntos de espacio).
+ *
+ * El techo de cada rango es el piso del siguiente menos uno, para que la
+ * planilla se lea como siempre ("Cuarta: 25 a 35"). La clasificación usa
+ * solo el piso -- ver categoriaPorPuntaje_ en Ranking.js --, así que el
+ * hueco de un punto entre 35 y 36 no le pertenece a nadie y no rompe.
+ */
+const FRONTERAS_CALIBRADAS_ = [
+  { nombre: 'Sexta', min: 0, max: 12 },
+  { nombre: 'Quinta', min: 13, max: 24 },
+  { nombre: 'Cuarta', min: 25, max: 35 },
+  { nombre: 'Tercera', min: 36, max: 42 },
+  { nombre: 'Segunda', min: 43, max: 60 },
+];
+
+/**
+ * Refunda el ranking: escribe las fronteras calibradas y deja a todos los
+ * jugadores empezando hoy, sin historial.
+ *
+ * Por qué las dos cosas juntas y no en dos funciones: el puntaje inicial
+ * de cada categoría es el medio de su rango, así que cambiar las
+ * fronteras sin re-sembrar deja a todo el mundo medido con una regla que
+ * supone que arrancó en otro lado. Con los 17 jugadores de hoy eso movía
+ * de categoría a 8 de ellos, ninguno por haber jugado peor. Separarlas en
+ * dos funciones sería dejar armada esa trampa en el desplegable.
+ *
+ * Qué NO se toca: los jugadores siguen siendo los mismos (mismo ID,
+ * mismo nombre, misma categoría declarada) y la pestaña Registros
+ * tampoco, que es la bitácora de altas y no tiene nada que ver con los
+ * partidos.
+ *
+ * Qué se borra: el Historial entero. Al 2026-08-19 eran 39 partidos, de
+ * los cuales 25 tenían marcadores imposibles (22 decían "3 sets ganando
+ * los 3", que no puede pasar porque el partido termina al segundo set, y
+ * otros tenían sets como 5-2). Eran los datos de prueba de construir la
+ * app, tecleados en el campo de texto libre que existía antes del
+ * marcador por sets. No es la historia del club.
+ *
+ * Correr a mano una sola vez, ANTES de cargar a los socios. Saca respaldo
+ * antes de tocar nada, y valida todo lo que necesita antes de escribir la
+ * primera celda: si algo no cuadra, no hace nada.
+ */
+function aplicarFronterasNuevasYEmpezarDeCero() {
+  const ss = getSpreadsheet_();
+  const cats = ss.getSheetByName(SHEET_CATEGORIAS);
+  const jugadoresSheet = ss.getSheetByName(SHEET_JUGADORES);
+  const historialSheet = ss.getSheetByName(SHEET_HISTORIAL);
+
+  // ---- Validar antes de escribir nada ------------------------------
+  const tabla = cats.getRange(2, 1, 20, 3).getValues();
+  const filaDeCategoria = {};
+  for (let i = 0; i < tabla.length; i++) {
+    if (!tabla[i][0]) break; // la fila en blanco que separa de la config
+    filaDeCategoria[normalizarNombreCategoria_(tabla[i][0])] = i + 2;
+  }
+
+  const sinFila = FRONTERAS_CALIBRADAS_.filter(
+    (f) => !filaDeCategoria[normalizarNombreCategoria_(f.nombre)]
+  ).map((f) => f.nombre);
+  if (sinFila.length) {
+    Logger.log('FRENADO: estas categorías no están en la pestaña Categorías: ' + sinFila.join(', ') + '. No se tocó nada.');
+    return;
+  }
+
+  const nuevoPorNombre = {};
+  FRONTERAS_CALIBRADAS_.forEach((f) => {
+    nuevoPorNombre[normalizarNombreCategoria_(f.nombre)] = f;
+  });
+
+  const lastRow = jugadoresSheet.getLastRow();
+  const filasJugadores = lastRow >= 2 ? jugadoresSheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];
+  const declaradasRaras = [];
+  filasJugadores.forEach((row) => {
+    if (!row[0] || !row[1]) return;
+    if (!nuevoPorNombre[normalizarNombreCategoria_(row[2])]) {
+      declaradasRaras.push(row[1] + ' (' + row[2] + ')');
+    }
+  });
+  if (declaradasRaras.length) {
+    Logger.log('FRENADO: no reconozco la categoría declarada de: ' + declaradasRaras.join(', ') + '. No se tocó nada.');
+    return;
+  }
+
+  // ---- A partir de acá sí se escribe -------------------------------
+  const respaldo = ss.copy(
+    ss.getName() +
+      ' (respaldo pre-refundación ' +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm') +
+      ')'
+  );
+  Logger.log('Respaldo creado: ' + respaldo.getUrl());
+
+  // 1. Fronteras nuevas.
+  FRONTERAS_CALIBRADAS_.forEach((f) => {
+    const fila = filaDeCategoria[normalizarNombreCategoria_(f.nombre)];
+    cats.getRange(fila, 2, 1, 2).setValues([[f.min, f.max]]);
+    Logger.log('  ' + f.nombre + ': ' + f.min + ' a ' + f.max);
+  });
+
+  // 2. Historial a cero. Los puntajes de Jugadores son fórmulas que suman
+  //    el Historial, así que al vaciarlo cada uno queda en su puntaje
+  //    inicial solo, sin que haya que recalcular nada.
+  const partidosBorrados = Math.max(0, historialSheet.getLastRow() - 1);
+  limpiarFilas_(historialSheet);
+
+  // 3. Puntaje inicial y categoría vigente, según la categoría declarada
+  //    de cada uno y las fronteras nuevas.
+  if (filasJugadores.length) {
+    const iniciales = [];
+    const vigentes = [];
+    filasJugadores.forEach((row) => {
+      if (!row[0] || !row[1]) {
+        iniciales.push(['']);
+        vigentes.push(['']);
+        return;
+      }
+      const rango = nuevoPorNombre[normalizarNombreCategoria_(row[2])];
+      iniciales.push([Math.round((rango.min + rango.max) / 2)]);
+      vigentes.push([rango.nombre]);
+    });
+    jugadoresSheet.getRange(2, 4, iniciales.length, 1).setValues(iniciales);
+    jugadoresSheet
+      .getRange(2, COL_JUGADORES_CATEGORIA_VIGENTE, vigentes.length, 1)
+      .setValues(vigentes);
+  }
+
+  SpreadsheetApp.flush();
+  invalidarCacheRanking_();
+
+  Logger.log('Partidos borrados: ' + partidosBorrados);
+  Logger.log('Jugadores re-sembrados: ' + filasJugadores.filter((r) => r[0] && r[1]).length);
+  FRONTERAS_CALIBRADAS_.forEach((f) => {
+    Logger.log('  puntaje inicial ' + f.nombre + ': ' + Math.round((f.min + f.max) / 2));
+  });
+  Logger.log('Respaldo: ' + respaldo.getUrl());
+}
+
+/**
  * Restaura Jugadores, Historial, Registros y las respuestas del formulario
  * viejo desde una copia de respaldo, y deja la planilla lista para el
  * esquema actual (delta por jugador en U..X).
