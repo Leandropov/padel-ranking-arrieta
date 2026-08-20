@@ -415,13 +415,36 @@ function guardarValoracion_(payload) {
       throw new Error('Solo los jugadores de ese partido pueden valorarlo.');
     }
 
+    // El puntaje de cada uno ANTES de este partido, que es contra lo que
+    // repartoPorValoracion_ compara el voto de los rivales.
+    //
+    // Hay que restarlo, no leerlo a secas: el puntaje que hay en
+    // Jugadores es una fórmula que ya suma el delta de ESTE partido
+    // (columnas U..X). Si se usara tal cual, revalorar dos veces el
+    // mismo partido daría resultados distintos, porque la segunda vez el
+    // puntaje ya arrastraría el reparto de la primera. Restando el delta
+    // guardado se recupera el estado previo y el cálculo vuelve a ser el
+    // mismo cuantas veces se corra -- el mismo criterio por el que el
+    // delta base se relee de K/L y no de U..X.
+    const puntajePorId = {};
+    leerJugadores_(getSpreadsheet_().getSheetByName(SHEET_JUGADORES)).forEach((j) => {
+      puntajePorId[j.id] = j.puntaje;
+    });
+    const deltasGuardados = historialSheet
+      .getRange(fila, COL_HISTORIAL_DELTA_A1, 1, 4)
+      .getValues()[0];
+    const puntajePrevio_ = (posicion) => {
+      const id = String(jugadores[posicion]).trim();
+      return (Number(puntajePorId[id]) || 0) - (Number(deltasGuardados[posicion]) || 0);
+    };
+
     const [deltaA1, deltaA2] = repartirDelta_(
       deltaBaseA,
-      repartoPorValoracion_(a1, a2, config.topeReparto)
+      repartoPorValoracion_(a1, a2, config.topeReparto, puntajePrevio_(0), puntajePrevio_(1), config.D)
     );
     const [deltaB1, deltaB2] = repartirDelta_(
       deltaBaseB,
-      repartoPorValoracion_(b1, b2, config.topeReparto)
+      repartoPorValoracion_(b1, b2, config.topeReparto, puntajePrevio_(2), puntajePrevio_(3), config.D)
     );
 
     historialSheet

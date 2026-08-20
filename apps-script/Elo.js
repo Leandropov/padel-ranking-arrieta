@@ -144,7 +144,7 @@ function factorConfiabilidad_(partidosJugados, partidosReferencia, pesoConfiabil
  * Devuelve 0.5 (mitad y mitad, como antes de la valoración) si nadie
  * valoró a esa pareja o si el tope está sin configurar.
  */
-function repartoPorValoracion_(valUno, valOtro, tope) {
+function repartoPorValoracion_(valUno, valOtro, tope, puntajePrevioUno, puntajePrevioOtro, D) {
   if (!tope || tope <= 0.5) return 0.5;
   const uno = Number(valUno) || 0;
   const otro = Number(valOtro) || 0;
@@ -152,8 +152,33 @@ function repartoPorValoracion_(valUno, valOtro, tope) {
   if (total <= 0) return 0.5;
 
   const crudo = uno / total;
+
+  // Lo que los puntajes de los DOS COMPAÑEROS ya predicen sobre quién de
+  // ellos debería jugar mejor. Se compara el voto contra esto en vez de
+  // contra 0.5, así solo se transfiere la sorpresa: la parte del voto
+  // que el ranking todavía no sabía.
+  //
+  // Sin esto, una pareja despareja fija se separa sin freno. Si uno le
+  // lleva veinte puntos al otro y los rivales lo votan mejor —que es lo
+  // esperable, porque de verdad juega mejor—, el reparto seguía siendo
+  // 70/30 partido tras partido y le seguía transfiriendo puntos para
+  // siempre. Medido sobre un club simulado: una pareja tercera+quinta
+  // que juega junta todo el tiempo terminaba, al año, con el fuerte
+  // una categoría y media por encima de donde le tocaba y el flojo dos
+  // por debajo, sin que ninguno de los dos hubiera jugado distinto.
+  // Comparando contra lo esperado, el traspaso se apaga solo a medida
+  // que la diferencia queda registrada, y el sesgo cae de +17/-23 a
+  // +0/-5 puntos.
+  //
+  // Si no se pasan los puntajes previos, esperado vale 0.5 y la cuenta
+  // queda EXACTAMENTE igual que antes de este agregado. Eso también es
+  // lo que pasa, por la fórmula, cuando los dos compañeros tienen el
+  // mismo puntaje: el caso normal no cambia en nada.
+  const hayPuntajes = isFinite(puntajePrevioUno) && isFinite(puntajePrevioOtro) && D;
+  const esperado = hayPuntajes ? resultadoEsperadoA_(puntajePrevioUno, puntajePrevioOtro, D) : 0.5;
+
   const peso = 2 * (Math.min(tope, 1) - 0.5); // tope 0.7 -> peso 0.4
-  const parte = 0.5 + peso * (crudo - 0.5);
+  const parte = 0.5 + peso * (crudo - esperado);
   // Red de seguridad: con tope <= 1 la compresión ya no puede pasarse,
   // pero si alguien escribe 1.5 en la planilla esto evita un reparto
   // fuera de rango.
