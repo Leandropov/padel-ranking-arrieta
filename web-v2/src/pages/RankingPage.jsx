@@ -179,7 +179,28 @@ export default function RankingPage() {
  */
 function RankingCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCategoria }) {
   const filtrados = useMemo(() => {
-    const conPosicion = jugadores.map((j, i) => ({ ...j, posicion: i + 1 }));
+    // El desempate por nombre importa el día que el club arranca: todos
+    // los de una categoría tienen exactamente el mismo puntaje inicial y,
+    // sin un criterio explícito, el orden lo termina decidiendo el de la
+    // planilla -- o sea, quién se registró primero. Alfabético no es más
+    // justo, pero es explicable.
+    const ordenados = [...jugadores].sort(
+      (a, b) => b.puntaje - a.puntaje || a.nombre.localeCompare(b.nombre, 'es')
+    );
+    // Quien todavía no jugó no tiene posición: su puntaje es el que le
+    // tocó por la categoría que declaró, no algo que ganó en la cancha.
+    // Un número ahí sería inventado, y arriba de la tabla se leería como
+    // que esa persona va ganando sin haber jugado.
+    //
+    // La numeración cuenta solo a los que jugaron, así que no quedan
+    // huecos: una lista puede ir 1, --, 2 y eso se lee bien (el segundo
+    // que jugó), mientras que 1, --, 3 parece un error.
+    let puesto = 0;
+    const conPosicion = ordenados.map((j) => {
+      const jugo = Boolean(j.fechaUltimoPartido);
+      if (jugo) puesto += 1;
+      return { ...j, posicion: jugo ? puesto : null };
+    });
     const texto = busqueda.trim().toLowerCase();
     if (!texto) return conPosicion;
     return conPosicion.filter((j) => j.nombre.toLowerCase().includes(texto));
@@ -193,8 +214,15 @@ function RankingCategoria({ jugadores, busqueda, mostrarCategoria, coloresPorCat
     return <p className="py-4 text-sm text-muted-foreground">No encontramos a nadie con ese nombre.</p>;
   }
 
+  const nadieJugo = filtrados.every((j) => j.posicion === null);
+
   return (
     <>
+      {nadieJugo && (
+        <p className="pt-1 pb-3 text-sm text-muted-foreground">
+          Todavía no se cargó ningún partido. Entras al ranking cuando juegues el tuyo.
+        </p>
+      )}
       <ul className="sm:hidden">
         {filtrados.map((j) => (
           <FilaJugador
@@ -249,8 +277,10 @@ function CategoriaBadge({ categoria, coloresPorCategoria, className }) {
 function FilaJugador({ jugador, mostrarCategoria, coloresPorCategoria }) {
   return (
     <li className="flex items-center gap-2 border-b py-3 last:border-b-0">
-      <span className="w-5 shrink-0 text-right font-mono text-sm font-bold tabular-nums">
-        {jugador.posicion}
+      {/* w-7 y no w-5: con 225 socios el puesto del ranking global llega
+          a tres cifras, y en w-5 se cortaba. */}
+      <span className="w-7 shrink-0 text-right font-mono text-sm font-bold tabular-nums">
+        {jugador.posicion ?? '—'}
       </span>
       <p className="line-clamp-2 min-w-0 flex-1 font-medium break-words">{jugador.etiqueta}</p>
       {/* Las tres columnas de la derecha llevan ancho fijo y el mismo gap.
@@ -312,7 +342,9 @@ function TablaCategoria({ filtrados, mostrarCategoria, coloresPorCategoria }) {
           <TableRow key={j.id}>
             {/* Números en font-mono con tabular-nums: el aire de tablero
                 financiero preciso de Coinbase (CoinbaseMono). */}
-            <TableCell className="text-right font-mono tabular-nums text-muted-foreground">{j.posicion}</TableCell>
+            <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+              {j.posicion ?? '—'}
+            </TableCell>
             <TableCell className="font-medium">{j.etiqueta}</TableCell>
             {mostrarCategoria && (
               <TableCell>
